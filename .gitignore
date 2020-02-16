@@ -15,10 +15,9 @@ run/
 
 test_out/
 
-# project root
-/src/
-
 # native libraries
 /**/*.so
 /**/*.dll
 /**/*.o
+
+*.tar.gz
