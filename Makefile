@@ -7,7 +7,7 @@ export TOPDIR		:=	$(CURDIR)
 export TOOLCHAINS	:=	$(CURDIR)/toolchain
 export COMMONSRC	:=	$(CURDIR)/src/main/native
 
-export CFLAGS		:=	-shared -Ofast -ffast-math -fPIC -ffunction-sections -fdata-sections -fvisibility=hidden
+export CFLAGS		:=	-shared -Ofast -ffast-math -fPIC -ffunction-sections -fdata-sections
 export CXXFLAGS		:=	$(CFLAGS)
 export LDFLAGS		:=	$(CFLAGS) -Wl,--gc-sections
 
@@ -28,7 +28,7 @@ export ARCH_TASKS	:=	$(foreach arch,$(ARCHS),build.$(arch))
 export MODULES		:=	native
 
 export LIB_URL_BASE	:=	https://cloud.daporkchop.net/programs/source/
-export LIBS			:=	leveldb-mcpe-1.22.tar.gz
+export LIBS			:=	leveldb-mcpe-1.22.tar.gz zlib-ng-1.2.11.tar.gz
 
 .PHONY: build clean .FORCE
 
