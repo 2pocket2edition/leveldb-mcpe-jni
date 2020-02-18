@@ -89,3 +89,21 @@ publishing {
 }
 
 build.dependsOn(publishToMavenLocal)
+
+if (System.getProperty("os.name", "").toLowerCase().replaceAll("[^a-z0-9]+", "").startsWith("windows")) {
+    throw new IllegalStateException("You are running Windows, which is bad and you should feel bad.\nThis means that native libraries cannot be built.")
+} else {
+    task compileNatives(type: Exec) {
+        workingDir "$projectDir"
+        commandLine "make", String.format("-j%d", Runtime.getRuntime().availableProcessors())
+    }
+
+    compileJava.dependsOn(compileNatives)
+
+    task cleanNatives(type: Exec) {
+        workingDir "$projectDir"
+        commandLine "make", "clean"
+    }
+
+    clean.dependsOn(cleanNatives)
+}

@@ -13,36 +13,15 @@
  *
  */
 
-package net.daporkchop.ldbjni.natives;
+package net.daporkchop.ldbjni.exception;
 
-import net.daporkchop.ldbjni.DBFactoryProvider;
-import org.iq80.leveldb.DB;
-import org.iq80.leveldb.Options;
-
-import java.io.File;
-import java.io.IOException;
+import org.iq80.leveldb.DBException;
 
 /**
- * Native implementation of {@link DBFactoryProvider}.
- *
  * @author DaPorkchop_
  */
-final class NativeDBFactory implements DBFactoryProvider {
-    @Override
-    public boolean isNative() {
-        return false;
-    }
-
-    @Override
-    public DB open(File file, Options options) throws IOException {
-        return new NativeDB(file, options);
-    }
-
-    @Override
-    public void destroy(File file, Options options) throws IOException {
-    }
-
-    @Override
-    public void repair(File file, Options options) throws IOException {
+public class DBCorruptionException extends DBException {
+    public DBCorruptionException(String s) {
+        super(s);
     }
 }

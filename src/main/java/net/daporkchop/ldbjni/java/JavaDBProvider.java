@@ -28,7 +28,7 @@ import java.io.IOException;
  *
  * @author DaPorkchop_
  */
-public final class JavaDBProvider implements DBFactoryProvider {
+final class JavaDBProvider implements DBFactoryProvider {
     @Override
     public boolean isNative() {
         return false;
