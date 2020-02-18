@@ -49,8 +49,8 @@ final class NativeDB implements DB {
     public NativeDB(@NonNull File path, @NonNull Options options) {
         if (options.comparator() != null) {
             throw new UnsupportedOperationException("comparator");
-        } else if (options.logger() != null) {
-            throw new UnsupportedOperationException("logger");
+        //} else if (options.logger() != null) {
+        //    throw new UnsupportedOperationException("logger");
         } else if (options.compressionType() == null) {
             throw new NullPointerException("compressionType");
         }
