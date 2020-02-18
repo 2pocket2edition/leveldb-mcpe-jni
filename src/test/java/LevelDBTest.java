@@ -29,7 +29,7 @@ public class LevelDBTest {
     public static final File TEST_ROOT = new File("test_out");
 
     static {
-        if (PFiles.checkFileExists(TEST_ROOT))    {
+        if (PFiles.checkDirectoryExists(TEST_ROOT))    {
             PFiles.rmContents(TEST_ROOT);
         }
     }

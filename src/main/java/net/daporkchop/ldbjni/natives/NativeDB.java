@@ -35,16 +35,41 @@ import java.io.IOException;
  * @author DaPorkchop_
  */
 final class NativeDB implements DB {
-    private static native long openDb(String name);
+    private static native long openDb(String name, boolean create_if_missing, boolean error_if_exists, boolean paranoid_checks, int write_buffer_size,
+                                      int max_open_files, int block_size, int block_restart_interval, int max_file_size, int compression, long cacheSize);
 
-    private static native void closeDb(long db);
+    private static native long createDecompressAllocator();
+
+    private static native void closeDb(long db, long dca);
 
     private final long     db;
+    private final long     dca;
     private final PCleaner cleaner;
 
     public NativeDB(@NonNull File path, @NonNull Options options) {
-        this.db = openDb(path.getAbsoluteFile().getAbsolutePath());
-        this.cleaner = PCleaner.cleaner(this, new Releaser(this.db));
+        if (options.comparator() != null) {
+            throw new UnsupportedOperationException("comparator");
+        } else if (options.logger() != null) {
+            throw new UnsupportedOperationException("logger");
+        } else if (options.compressionType() == null) {
+            throw new NullPointerException("compressionType");
+        }
+
+        this.db = openDb(
+                path.getAbsoluteFile().getAbsolutePath(),
+                options.createIfMissing(),
+                options.errorIfExists(),
+                options.paranoidChecks(),
+                options.writeBufferSize(),
+                options.maxOpenFiles(),
+                options.blockSize(),
+                options.blockRestartInterval(),
+                -1, //not present in Options...
+                options.compressionType().persistentId(),
+                options.cacheSize());
+        this.dca = createDecompressAllocator();
+
+        this.cleaner = PCleaner.cleaner(this, new Releaser(this.db, this.dca));
     }
 
     @Override
@@ -134,10 +159,11 @@ final class NativeDB implements DB {
     @RequiredArgsConstructor
     private static final class Releaser implements Runnable {
         private final long db;
+        private final long dca;
 
         @Override
         public void run() {
-            closeDb(this.db);
+            closeDb(this.db, this.dca);
         }
     }
 }

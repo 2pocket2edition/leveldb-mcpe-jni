@@ -32,36 +32,36 @@ build: libldb-jni.$(EXT)
 	@[ -d $(OUTDIR)/$(BUILD) ] || mkdir -p $(OUTDIR)/$(BUILD)
 	@cp libldb-jni.$(EXT) $(OUTDIR)/$(BUILD)/libldb-jni.$(EXT)
 
-libldb-jni.$(EXT): $(CFILES) $(CPPFILES) $(OFILES) $(CURDIR)/lib-leveldb/libleveldb.a $(CURDIR)/lib-zlib/libz-ng.a
+libldb-jni.$(EXT): $(CFILES) $(CPPFILES) $(OFILES) $(CURDIR)/lib-leveldb/libleveldb.a $(CURDIR)/lib-zlib/libz.a
 	@echo "Linking $@..."
-	@$(LD) $(LDFLAGS) $(INCLUDE) -o $@ $(OFILES) $(CURDIR)/lib-leveldb/libleveldb.a
+	@$(LD) $(LDFLAGS) $(INCLUDE) -o $@ $(OFILES) $(CURDIR)/lib-leveldb/libleveldb.a $(CURDIR)/lib-zlib/libz.a
 	@echo "Stripping $@..."
-	@$(STRIP) $@
+#	@$(STRIP) $@
 
-%.c.o: $(CFILES) $(CURDIR)/lib-leveldb/libleveldb.a $(CURDIR)/lib-zlib/libz-ng.a
+%.c.o: $(CFILES) $(CURDIR)/lib-leveldb/libleveldb.a $(CURDIR)/lib-zlib/libz.a
 	@echo "Building $(subst .o,,$(subst __,/,$@))..."
 	@$(CC) $(CFLAGS) $(INCLUDE) -c $(subst .o,,$(subst __,/,$@)) -o $@
 
-%.cpp.o: $(CPPFILES) $(CURDIR)/lib-leveldb/libleveldb.a $(CURDIR)/lib-zlib/libz-ng.a
+%.cpp.o: $(CPPFILES) $(CURDIR)/lib-leveldb/libleveldb.a $(CURDIR)/lib-zlib/libz.a
 	@echo "Building $(subst .o,,$(subst __,/,$@))..."
 	$(CXX) $(CXXFLAGS) $(INCLUDE) -c $(subst .o,,$(subst __,/,$@)) -o $@
 
-$(CURDIR)/lib-leveldb/libleveldb.a: $(TOPDIR)/leveldb-mcpe-1.22.tar.gz $(CURDIR)/lib-zlib/libz-ng.a
+$(CURDIR)/lib-leveldb/libleveldb.a: $(TOPDIR)/leveldb-mcpe-1.22.tar.gz $(CURDIR)/lib-zlib/libz.a
 	@[ ! -d lib-leveldb/ ] || rm -rf lib-leveldb/
 	@tar zxf $(TOPDIR)/leveldb-mcpe-1.22.tar.gz
 	@mv leveldb-mcpe-1.22/ lib-leveldb/
 	@[ -f "$(TOOLCHAINS)/$(BUILD).cmake" ]
 	@cd lib-leveldb/ && cmake \
 		-DCMAKE_TOOLCHAIN_FILE="$(TOOLCHAINS)/$(BUILD).cmake" \
-		-DZLIB_LIBRARY="$(CURDIR)/lib-zlib/libz-ng.a" -DZLIB_INCLUDE_DIR="$(CURDIR)/lib-zlib" \
+		-DZLIB_LIBRARY="$(CURDIR)/lib-zlib/libz.a" -DZLIB_INCLUDE_DIR="$(CURDIR)/lib-zlib" \
 		-DLEVELDB_BUILD_TESTS=OFF -DLEVELDB_BUILD_BENCHMARKS=OFF -DLEVELDB_INSTALL=OFF .
 	@$(MAKE) -C $(CURDIR)/lib-leveldb/ -f $(CURDIR)/lib-leveldb/Makefile
 
-$(CURDIR)/lib-zlib/libz-ng.a: $(TOPDIR)/zlib-ng-1.2.11.tar.gz
+$(CURDIR)/lib-zlib/libz.a: $(TOPDIR)/zlib-ng-1.2.11.tar.gz
 	@[ ! -d lib-zlib/ ] || rm -rf lib-zlib/
 	@tar zxf $(TOPDIR)/zlib-ng-1.2.11.tar.gz
 	@mv zlib-ng-1.2.11/ lib-zlib/
-	@cd lib-zlib/ && ./configure --static && cd ..
-	@$(MAKE) -C $(CURDIR)/lib-zlib/ -f $(CURDIR)/lib-zlib/Makefile libz-ng.a
+	@cd lib-zlib/ && ./configure --static --zlib-compat && cd ..
+	@$(MAKE) -C $(CURDIR)/lib-zlib/ -f $(CURDIR)/lib-zlib/Makefile libz.a
 
 endif

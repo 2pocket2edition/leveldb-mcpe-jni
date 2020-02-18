@@ -13,18 +13,26 @@ extern "C" {
 /*
  * Class:     net_daporkchop_ldbjni_natives_NativeDB
  * Method:    openDb
- * Signature: (Ljava/lang/String;)J
+ * Signature: (Ljava/lang/String;ZZZIIIIIIJ)J
  */
 JNIEXPORT jlong JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_openDb
-  (JNIEnv *, jclass, jstring);
+  (JNIEnv *, jclass, jstring, jboolean, jboolean, jboolean, jint, jint, jint, jint, jint, jint, jlong);
+
+/*
+ * Class:     net_daporkchop_ldbjni_natives_NativeDB
+ * Method:    createDecompressAllocator
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_createDecompressAllocator
+  (JNIEnv *, jclass);
 
 /*
  * Class:     net_daporkchop_ldbjni_natives_NativeDB
  * Method:    closeDb
- * Signature: (J)V
+ * Signature: (JJ)V
  */
 JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_closeDb
-  (JNIEnv *, jclass, jlong);
+  (JNIEnv *, jclass, jlong, jlong);
 
 #ifdef __cplusplus
 }

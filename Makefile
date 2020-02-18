@@ -7,9 +7,11 @@ export TOPDIR		:=	$(CURDIR)
 export TOOLCHAINS	:=	$(CURDIR)/toolchain
 export COMMONSRC	:=	$(CURDIR)/src/main/native
 
-export CFLAGS		:=	-shared -Ofast -ffast-math -fPIC -ffunction-sections -fdata-sections
+#export CFLAGS		:=	-shared -Ofast -ffast-math -fPIC -ffunction-sections -fdata-sections
+export CFLAGS		:=	-Ofast -ffast-math -fPIC
 export CXXFLAGS		:=	$(CFLAGS)
-export LDFLAGS		:=	$(CFLAGS) -Wl,--gc-sections
+#export LDFLAGS		:=	$(CFLAGS) -Wl,--gc-sections
+export LDFLAGS		:=	$(CFLAGS) -shared
 
 ifndef LDB_NATIVES_DEBUG
 export CFLAGS		:=	$(CFLAGS)
