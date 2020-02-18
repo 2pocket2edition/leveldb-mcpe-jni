@@ -23,8 +23,8 @@ import net.daporkchop.lib.natives.FeatureBuilder;
  */
 @UtilityClass
 public class LevelDB {
-    public final DBFactoryProvider PROVIDER = FeatureBuilder.<DBFactoryProvider>create(LevelDB.class)
-            .addNative("net.daporkchop.ldbjni.natives.NativeDBFactory", "ldb-jni")
+    public final DBProvider PROVIDER = FeatureBuilder.<DBProvider>create(LevelDB.class)
+            .addNative("net.daporkchop.ldbjni.natives.NativeDBProvider", "ldb-jni")
             .addJava("net.daporkchop.ldbjni.java.JavaDBProvider")
             .build();
 }

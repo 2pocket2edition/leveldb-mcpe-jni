@@ -15,7 +15,7 @@ extern "C" {
  * Method:    openDb
  * Signature: (Ljava/lang/String;)J
  */
-JNIEXPORT jlong JNICALL Java_ldbjni_natives_NativeDB_openDb
+JNIEXPORT jlong JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_openDb
   (JNIEnv *, jclass, jstring);
 
 /*
@@ -23,7 +23,7 @@ JNIEXPORT jlong JNICALL Java_ldbjni_natives_NativeDB_openDb
  * Method:    closeDb
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_ldbjni_natives_NativeDB_closeDb
+JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_closeDb
   (JNIEnv *, jclass, jlong);
 
 #ifdef __cplusplus

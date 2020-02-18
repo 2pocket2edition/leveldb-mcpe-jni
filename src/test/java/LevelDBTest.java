@@ -13,17 +13,34 @@
  *
  */
 
-package net.daporkchop.ldbjni;
+import net.daporkchop.ldbjni.LevelDB;
+import net.daporkchop.lib.common.misc.file.PFiles;
+import org.iq80.leveldb.DB;
+import org.iq80.leveldb.Options;
+import org.junit.Test;
 
-import net.daporkchop.lib.natives.impl.Feature;
-import org.iq80.leveldb.DBFactory;
+import java.io.File;
+import java.io.IOException;
 
 /**
- * A {@link Feature} that provides an implementation of {@link DBFactory}.
- *
  * @author DaPorkchop_
  */
-public interface DBFactoryProvider extends Feature<DBFactoryProvider>, DBFactory {
-    @Override
-    boolean isNative();
+public class LevelDBTest {
+    public static final File TEST_ROOT = new File("test_out");
+
+    static {
+        if (PFiles.checkFileExists(TEST_ROOT))    {
+            PFiles.rmContents(TEST_ROOT);
+        }
+    }
+
+    @Test
+    public void test() throws IOException   {
+        if (!LevelDB.PROVIDER.isNative())   {
+            throw new IllegalStateException("Not using native LevelDB!");
+        }
+
+        try (DB db = LevelDB.PROVIDER.open(TEST_ROOT, new Options()))   {
+        }
+    }
 }

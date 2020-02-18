@@ -13,39 +13,17 @@
  *
  */
 
-package net.daporkchop.ldbjni.java;
+package net.daporkchop.ldbjni;
 
-import net.daporkchop.ldbjni.DBProvider;
-import org.iq80.leveldb.DB;
-import org.iq80.leveldb.Options;
-import org.iq80.leveldb.impl.Iq80DBFactory;
-
-import java.io.File;
-import java.io.IOException;
+import net.daporkchop.lib.natives.impl.Feature;
+import org.iq80.leveldb.DBFactory;
 
 /**
- * Dummy implementation of {@link DBProvider} that simply delegates to {@link Iq80DBFactory}.
+ * A {@link Feature} that provides an implementation of {@link DBFactory}.
  *
  * @author DaPorkchop_
  */
-final class JavaDBProvider implements DBProvider {
+public interface DBProvider extends Feature<DBProvider>, DBFactory {
     @Override
-    public boolean isNative() {
-        return false;
-    }
-
-    @Override
-    public DB open(File file, Options options) throws IOException {
-        return Iq80DBFactory.factory.open(file, options);
-    }
-
-    @Override
-    public void destroy(File file, Options options) throws IOException {
-        Iq80DBFactory.factory.destroy(file, options);
-    }
-
-    @Override
-    public void repair(File file, Options options) throws IOException {
-        Iq80DBFactory.factory.repair(file, options);
-    }
+    boolean isNative();
 }

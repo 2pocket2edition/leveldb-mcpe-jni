@@ -24,6 +24,7 @@ CFILES			:=	$(foreach dir,$(SOURCES),$(wildcard $(dir)/*.c))
 CPPFILES		:=	$(foreach dir,$(SOURCES),$(wildcard $(dir)/*.cpp))
 OFILES			:=	$(addsuffix .o,$(subst /,__,$(CFILES)) $(subst /,__,$(CPPFILES)))
 
+INCLUDES		:=	$(INCLUDES) $(CURDIR)/lib-leveldb/include
 INCLUDE			:=	$(addprefix -I,$(INCLUDES) $(CURDIR))
 
 build: libldb-jni.$(EXT)

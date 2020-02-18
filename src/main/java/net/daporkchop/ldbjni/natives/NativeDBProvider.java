@@ -15,7 +15,7 @@
 
 package net.daporkchop.ldbjni.natives;
 
-import net.daporkchop.ldbjni.DBFactoryProvider;
+import net.daporkchop.ldbjni.DBProvider;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.Options;
 
@@ -23,14 +23,14 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * Native implementation of {@link DBFactoryProvider}.
+ * Native implementation of {@link DBProvider}.
  *
  * @author DaPorkchop_
  */
-final class NativeDBFactory implements DBFactoryProvider {
+final class NativeDBProvider implements DBProvider {
     @Override
     public boolean isNative() {
-        return false;
+        return true;
     }
 
     @Override
