@@ -11,6 +11,8 @@
 
 bool checkException(JNIEnv* env, leveldb::Status& status);
 
+jint throwNPE(JNIEnv* env, const char* msg);
+
 jint throwException(JNIEnv* env, const char* msg);
 
 jint throwException(JNIEnv* env, const char* msg, jint err);

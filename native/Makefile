@@ -36,7 +36,7 @@ libldb-jni.$(EXT): $(CFILES) $(CPPFILES) $(OFILES) $(CURDIR)/lib-leveldb/libleve
 	@echo "Linking $@..."
 	@$(LD) $(LDFLAGS) $(INCLUDE) -o $@ $(OFILES) $(CURDIR)/lib-leveldb/libleveldb.a $(CURDIR)/lib-zlib/libz.a
 	@echo "Stripping $@..."
-#	@$(STRIP) $@
+	@$(STRIP) $@
 
 %.c.o: $(CFILES) $(CURDIR)/lib-leveldb/libleveldb.a $(CURDIR)/lib-zlib/libz.a
 	@echo "Building $(subst .o,,$(subst __,/,$@))..."

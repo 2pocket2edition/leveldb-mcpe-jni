@@ -15,6 +15,8 @@
 
 import net.daporkchop.ldbjni.LevelDB;
 import net.daporkchop.lib.common.misc.file.PFiles;
+import net.daporkchop.lib.common.util.PorkUtil;
+import net.daporkchop.lib.encoding.ToBytes;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.Options;
 import org.junit.Test;
@@ -22,6 +24,7 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.IntStream;
 
 /**
  * @author DaPorkchop_
@@ -42,12 +45,30 @@ public class LevelDBTest {
         }
 
         try (DB db = LevelDB.PROVIDER.open(TEST_ROOT, new Options()))   {
-            for (int i = 0; i < 256; i++)  {
-                byte[] arr = new byte[ThreadLocalRandom.current().nextInt(10, 10000)];
-                db.put(new byte[] {(byte) i}, arr);
+            IntStream.range(0, 1000).parallel()
+                    .forEach(i -> {
+                        byte[] arr = new byte[ThreadLocalRandom.current().nextInt(10, 100000)];
+                        //ThreadLocalRandom.current().nextBytes(arr);
+                        db.put(ToBytes.toBytes(i), arr);
+                    });
+
+            System.out.println(db.get(ToBytes.toBytes(0)).length);
+            db.delete(ToBytes.toBytes(0));
+
+            try {
+                System.out.println(db.get(ToBytes.toBytes(0)).length);
+                throw new IllegalStateException();
+            } catch (NullPointerException e)    {
+                //this should be thrown
             }
 
-            System.out.println(db.get(new byte[] { 0 }).length);
+            System.out.println("Wrote values!");
+
+            db.compactRange(ToBytes.toBytes(0), ToBytes.toBytes(100));
+
+            System.out.println("Closing DB...");
         }
+
+        System.out.println("Closed DB!");
     }
 }

@@ -28,6 +28,16 @@ bool checkException(JNIEnv* env, leveldb::Status& status)   {
     }
 }
 
+jint throwNPE(JNIEnv* env, const char* msg)  {
+    jclass clazz = env->FindClass("java/lang/NullPointerException");
+
+    return env->Throw((jthrowable) env->NewObject(
+        clazz,
+        env->GetMethodID(clazz, "<init>", "(Ljava/lang/String;)V"),
+        env->NewStringUTF(msg)
+    ));
+}
+
 jint throwException(JNIEnv* env, const char* msg)  {
     jclass clazz = env->FindClass("net/daporkchop/lib/natives/NativeException");
 

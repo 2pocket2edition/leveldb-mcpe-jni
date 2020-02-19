@@ -58,6 +58,22 @@ JNIEXPORT jbyteArray JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_get0
 JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_put0
   (JNIEnv *, jobject, jbyteArray, jbyteArray, jboolean);
 
+/*
+ * Class:     net_daporkchop_ldbjni_natives_NativeDB
+ * Method:    delete0
+ * Signature: ([BZ)V
+ */
+JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_delete0
+  (JNIEnv *, jobject, jbyteArray, jboolean);
+
+/*
+ * Class:     net_daporkchop_ldbjni_natives_NativeDB
+ * Method:    compactRange
+ * Signature: ([B[B)V
+ */
+JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_compactRange
+  (JNIEnv *, jobject, jbyteArray, jbyteArray);
+
 #ifdef __cplusplus
 }
 #endif

@@ -108,64 +108,74 @@ final class NativeDB implements DB {
     private native void put0(byte[] key, byte[] value, boolean sync);
 
     @Override
-    public void delete(byte[] key) throws DBException {
+    public void delete(@NonNull byte[] key) throws DBException {
+        this.delete0(key, false);
     }
 
     @Override
-    public Snapshot delete(byte[] key, WriteOptions options) throws DBException {
+    public Snapshot delete(@NonNull byte[] key, @NonNull WriteOptions options) throws DBException {
+        if (options.snapshot()) {
+            throw new UnsupportedOperationException("snapshot");
+        }
+
+        this.delete0(key, options.sync());
         return null;
     }
+
+    private native void delete0(byte[] key, boolean sync);
 
     @Override
     public WriteBatch createWriteBatch() {
-        return null;
+        throw new UnsupportedOperationException("createWriteBatch");
     }
 
     @Override
     public void write(WriteBatch writeBatch) throws DBException {
+        throw new UnsupportedOperationException("writeBatch");
     }
 
     @Override
     public Snapshot write(WriteBatch writeBatch, WriteOptions options) throws DBException {
-        return null;
+        throw new UnsupportedOperationException("writeBatch");
     }
 
     @Override
     public DBIterator iterator() {
-        return null;
+        throw new UnsupportedOperationException("iterator");
     }
 
     @Override
-    public DBIterator iterator(ReadOptions options) {
-        return null;
+    public DBIterator iterator(@NonNull ReadOptions options) {
+        throw new UnsupportedOperationException("iterator");
     }
 
     @Override
     public Snapshot getSnapshot() {
-        return null;
+        throw new UnsupportedOperationException("getSnapshot");
     }
 
     @Override
-    public long[] getApproximateSizes(Range... ranges) {
-        return new long[0];
+    public long[] getApproximateSizes(@NonNull Range... ranges) {
+        throw new UnsupportedOperationException("getApproximateSizes");
     }
 
     @Override
-    public String getProperty(String s) {
-        return null;
+    public String getProperty(@NonNull String s) {
+        throw new UnsupportedOperationException("getProperty");
     }
 
     @Override
     public void suspendCompactions() throws InterruptedException {
+        throw new UnsupportedOperationException("suspendCompactions");
     }
 
     @Override
     public void resumeCompactions() {
+        throw new UnsupportedOperationException("resumeCompactions");
     }
 
     @Override
-    public void compactRange(byte[] bytes, byte[] bytes1) throws DBException {
-    }
+    public native void compactRange(byte[] start, byte[] limit) throws DBException;
 
     @Override
     public void close() throws IOException {

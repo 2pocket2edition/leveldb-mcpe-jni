@@ -73,10 +73,10 @@ JNIEXPORT jbyteArray JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_get0
     readOptions.snapshot = (leveldb::Snapshot*) snapshot;
     readOptions.decompress_allocator = (leveldb::DecompressAllocator*) env->GetLongField(obj, dcaID);
 
-    int len = env->GetArrayLength(key);
-    char* keyRaw = new char[len];
-    env->GetByteArrayRegion(key, 0, len, (jbyte*) keyRaw);
-    leveldb::Slice keySlice(keyRaw, len);
+    int keyLength = env->GetArrayLength(key);
+    char* keyRaw = new char[keyLength];
+    env->GetByteArrayRegion(key, 0, keyLength, (jbyte*) keyRaw);
+    leveldb::Slice keySlice(keyRaw, keyLength);
 
     std::string value;
     leveldb::Status status = db->Get(readOptions, keySlice, &value);
@@ -113,4 +113,54 @@ JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_put0
     delete valueRaw;
 
     checkException(env, status);
+}
+
+JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_delete0
+  (JNIEnv* env, jobject obj, jbyteArray key, jboolean sync)  {
+    auto db = (leveldb::DB*) env->GetLongField(obj, dbID);
+
+    leveldb::WriteOptions writeOptions;
+    writeOptions.sync = sync;
+
+    int keyLength = env->GetArrayLength(key);
+    char* keyRaw = new char[keyLength];
+    env->GetByteArrayRegion(key, 0, keyLength, (jbyte*) keyRaw);
+    leveldb::Slice keySlice(keyRaw, keyLength);
+
+    leveldb::Status status = db->Delete(writeOptions, keySlice);
+    delete keyRaw;
+
+    checkException(env, status);
+}
+
+JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_compactRange
+  (JNIEnv* env, jobject obj, jbyteArray start, jbyteArray limit)  {
+    auto db = (leveldb::DB*) env->GetLongField(obj, dbID);
+
+    char* startRaw;
+    leveldb::Slice startSlice;
+    char* limitRaw;
+    leveldb::Slice limitSlice;
+
+    if (start != nullptr)   {
+        int startLength = env->GetArrayLength(start);
+        startRaw = new char[startLength];
+        env->GetByteArrayRegion(start, 0, startLength, (jbyte*) startRaw);
+        startSlice = leveldb::Slice(startRaw, startLength);
+    }
+    if (limit != nullptr)   {
+        int limitLength = env->GetArrayLength(limit);
+        limitRaw = new char[limitLength];
+        env->GetByteArrayRegion(limit, 0, limitLength, (jbyte*) limitRaw);
+        limitSlice = leveldb::Slice(limitRaw, limitLength);
+    }
+
+    db->CompactRange(start == nullptr ? nullptr : &startSlice, limit == nullptr ? nullptr : &limitSlice);
+
+    if (start != nullptr)   {
+        delete startRaw;
+    }
+    if (limit != nullptr)   {
+        delete limitRaw;
+    }
 }
