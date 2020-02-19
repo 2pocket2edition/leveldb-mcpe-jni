@@ -21,6 +21,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * @author DaPorkchop_
@@ -41,6 +42,12 @@ public class LevelDBTest {
         }
 
         try (DB db = LevelDB.PROVIDER.open(TEST_ROOT, new Options()))   {
+            for (int i = 0; i < 256; i++)  {
+                byte[] arr = new byte[ThreadLocalRandom.current().nextInt(10, 10000)];
+                db.put(new byte[] {(byte) i}, arr);
+            }
+
+            System.out.println(db.get(new byte[] { 0 }).length);
         }
     }
 }

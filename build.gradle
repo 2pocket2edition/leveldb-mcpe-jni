@@ -60,6 +60,8 @@ dependencies {
         exclude group: "com.google.guava"
     }
 
+    testCompile "net.daporkchop.lib:encoding:$porklibVersion"
+
     testCompile "junit:junit:$junitVersion"
 
     compileOnly "org.projectlombok:lombok:$lombokVersion"

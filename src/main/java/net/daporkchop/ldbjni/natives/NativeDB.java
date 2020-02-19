@@ -35,6 +35,12 @@ import java.io.IOException;
  * @author DaPorkchop_
  */
 final class NativeDB implements DB {
+    static {
+        init();
+    }
+
+    private static native void init();
+
     private static native long openDb(String name, boolean create_if_missing, boolean error_if_exists, boolean paranoid_checks, int write_buffer_size,
                                       int max_open_files, int block_size, int block_restart_interval, int max_file_size, int compression, long cacheSize);
 
@@ -73,35 +79,41 @@ final class NativeDB implements DB {
     }
 
     @Override
-    public byte[] get(byte[] bytes) throws DBException {
-        return new byte[0];
+    public byte[] get(@NonNull byte[] key) throws DBException    {
+        return this.get0(key, false, true, 0L);
     }
 
     @Override
-    public byte[] get(byte[] bytes, ReadOptions readOptions) throws DBException {
-        return new byte[0];
+    public byte[] get(@NonNull byte[] key, @NonNull ReadOptions options) throws DBException {
+        return this.get0(key, options.verifyChecksums(), options.fillCache(), 0L); //TODO: snapshot
+    }
+
+    private native byte[] get0(byte[] key, boolean verifyChecksums, boolean fillCache, long snapshot);
+
+    @Override
+    public void put(@NonNull byte[] key, @NonNull byte[] value) throws DBException {
+        this.put0(key, value, false);
     }
 
     @Override
-    public DBIterator iterator() {
+    public Snapshot put(@NonNull byte[] key, @NonNull byte[] value, @NonNull WriteOptions options) throws DBException {
+        if (options.snapshot()) {
+            throw new UnsupportedOperationException("snapshot");
+        }
+
+        this.put0(key, value, options.sync());
         return null;
     }
 
+    private native void put0(byte[] key, byte[] value, boolean sync);
+
     @Override
-    public DBIterator iterator(ReadOptions readOptions) {
+    public void delete(byte[] key) throws DBException {
+    }
+
+    @Override
+    public Snapshot delete(byte[] key, WriteOptions options) throws DBException {
         return null;
-    }
-
-    @Override
-    public void put(byte[] bytes, byte[] bytes1) throws DBException {
-    }
-
-    @Override
-    public void delete(byte[] bytes) throws DBException {
-    }
-
-    @Override
-    public void write(WriteBatch writeBatch) throws DBException {
     }
 
     @Override
@@ -110,17 +122,21 @@ final class NativeDB implements DB {
     }
 
     @Override
-    public Snapshot put(byte[] bytes, byte[] bytes1, WriteOptions writeOptions) throws DBException {
+    public void write(WriteBatch writeBatch) throws DBException {
+    }
+
+    @Override
+    public Snapshot write(WriteBatch writeBatch, WriteOptions options) throws DBException {
         return null;
     }
 
     @Override
-    public Snapshot delete(byte[] bytes, WriteOptions writeOptions) throws DBException {
+    public DBIterator iterator() {
         return null;
     }
 
     @Override
-    public Snapshot write(WriteBatch writeBatch, WriteOptions writeOptions) throws DBException {
+    public DBIterator iterator(ReadOptions options) {
         return null;
     }
 

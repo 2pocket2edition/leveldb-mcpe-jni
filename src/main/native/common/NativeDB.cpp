@@ -1,6 +1,15 @@
 #include "ldb-jni_common.h"
 #include "NativeDB.h"
 
+static jfieldID dbID;
+static jfieldID dcaID;
+
+JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_init
+  (JNIEnv* env, jclass cla)  {
+    dbID  = env->GetFieldID(cla, "db", "J");
+    dcaID = env->GetFieldID(cla, "dca", "J");
+}
+
 JNIEXPORT jlong JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_openDb
   (JNIEnv* env, jclass cla, jstring name, jboolean create_if_missing, jboolean error_if_exists, jboolean paranoid_checks, jint write_buffer_size,
    jint max_open_files, jint block_size, jint block_restart_interval, jint max_file_size, jint compression, jlong cacheSize)  {
@@ -52,4 +61,56 @@ JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_closeDb
   (JNIEnv* env, jclass cla, jlong db, jlong dca)  {
     delete (leveldb::DB*) db;
     delete (leveldb::DecompressAllocator*) dca;
+}
+
+JNIEXPORT jbyteArray JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_get0
+  (JNIEnv* env, jobject obj, jbyteArray key, jboolean verifyChecksums, jboolean fillCache, jlong snapshot)  {
+    auto db = (leveldb::DB*) env->GetLongField(obj, dbID);
+
+    leveldb::ReadOptions readOptions;
+    readOptions.verify_checksums = verifyChecksums;
+    readOptions.fill_cache = fillCache;
+    readOptions.snapshot = (leveldb::Snapshot*) snapshot;
+    readOptions.decompress_allocator = (leveldb::DecompressAllocator*) env->GetLongField(obj, dcaID);
+
+    int len = env->GetArrayLength(key);
+    char* keyRaw = new char[len];
+    env->GetByteArrayRegion(key, 0, len, (jbyte*) keyRaw);
+    leveldb::Slice keySlice(keyRaw, len);
+
+    std::string value;
+    leveldb::Status status = db->Get(readOptions, keySlice, &value);
+    delete keyRaw;
+
+    if (status.IsNotFound() || checkException(env, status))    {
+        return (jbyteArray) nullptr;
+    }
+
+    jbyteArray out = env->NewByteArray(value.size());
+    env->SetByteArrayRegion(out, 0, value.size(), (jbyte*) value.data());
+    return out;
+}
+
+JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_put0
+  (JNIEnv* env, jobject obj, jbyteArray key, jbyteArray value, jboolean sync)  {
+    auto db = (leveldb::DB*) env->GetLongField(obj, dbID);
+
+    leveldb::WriteOptions writeOptions;
+    writeOptions.sync = sync;
+
+    int keyLength = env->GetArrayLength(key);
+    char* keyRaw = new char[keyLength];
+    env->GetByteArrayRegion(key, 0, keyLength, (jbyte*) keyRaw);
+    leveldb::Slice keySlice(keyRaw, keyLength);
+
+    int valueLength = env->GetArrayLength(value);
+    char* valueRaw = new char[valueLength];
+    env->GetByteArrayRegion(value, 0, valueLength, (jbyte*) valueRaw);
+    leveldb::Slice valueSlice(valueRaw, valueLength);
+
+    leveldb::Status status = db->Put(writeOptions, keySlice, valueSlice);
+    delete keyRaw;
+    delete valueRaw;
+
+    checkException(env, status);
 }
