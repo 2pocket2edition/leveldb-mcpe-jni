@@ -1,4 +1,4 @@
-set(COMPILER_PREFIX "arm-linux-gnueabi")
+set(COMPILER_PREFIX "arm-linux-gnueabihf")
 
 find_program(CMAKE_C_COMPILER NAMES ${COMPILER_PREFIX}-gcc)
 find_program(CMAKE_CXX_COMPILER NAMES ${COMPILER_PREFIX}-g++)

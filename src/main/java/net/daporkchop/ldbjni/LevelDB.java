@@ -23,6 +23,12 @@ import net.daporkchop.lib.natives.FeatureBuilder;
  */
 @UtilityClass
 public class LevelDB {
+    /**
+     * The currently used {@link DBProvider}.
+     * <p>
+     * This will always be an instance of {@link net.daporkchop.ldbjni.natives.NativeDBProvider} if possible, and will fall back to
+     * {@link net.daporkchop.ldbjni.java.JavaDBProvider} otherwise.
+     */
     public final DBProvider PROVIDER = FeatureBuilder.<DBProvider>create(LevelDB.class)
             .addNative("net.daporkchop.ldbjni.natives.NativeDBProvider", "ldb-jni")
             .addJava("net.daporkchop.ldbjni.java.JavaDBProvider")

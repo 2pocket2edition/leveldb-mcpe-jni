@@ -1,0 +1,3 @@
+//this symbol shouldn't even exist (it's the vtable for leveldb::ZlibCompressorBase, which is never instantiated), but there you have it
+//even stranger, it IS correctly defined on windows...
+int _ZTIN7leveldb18ZlibCompressorBaseE = 0;

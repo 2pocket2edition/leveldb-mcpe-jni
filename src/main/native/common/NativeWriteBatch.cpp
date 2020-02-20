@@ -1,16 +1,9 @@
 #include "ldb-jni_common.h"
 #include "NativeWriteBatch.h"
 
-static jfieldID ptrID;
-
-JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeWriteBatch_init
-  (JNIEnv* env, jclass cla)  {
-    ptrID = env->GetFieldID(cla, "ptr", "J");
-}
-
 JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeWriteBatch_put0
-  (JNIEnv* env, jobject obj, jbyteArray key, jbyteArray value)  {
-    auto writeBatch = (leveldb::WriteBatch*) env->GetLongField(obj, ptrID);
+  (JNIEnv* env, jobject obj, jlong ptr, jbyteArray key, jbyteArray value)  {
+    auto writeBatch = (leveldb::WriteBatch*) ptr;
 
     if (writeBatch == nullptr)  {
         throwISE(env, "NativeWriteBatch has already been closed!");
@@ -33,8 +26,8 @@ JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeWriteBatch_put0
 }
 
 JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeWriteBatch_delete0
-  (JNIEnv* env, jobject obj, jbyteArray key)  {
-    auto writeBatch = (leveldb::WriteBatch*) env->GetLongField(obj, ptrID);
+  (JNIEnv* env, jobject obj, jlong ptr, jbyteArray key)  {
+    auto writeBatch = (leveldb::WriteBatch*) ptr;
 
     if (writeBatch == nullptr)  {
         throwISE(env, "NativeWriteBatch has already been closed!");

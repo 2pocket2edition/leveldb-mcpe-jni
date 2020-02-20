@@ -28,12 +28,6 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 @RequiredArgsConstructor
 final class NativeWriteBatch implements WriteBatch {
-    static {
-        init();
-    }
-
-    private static native void init();
-
     final AtomicLong ptr;
 
     private final NativeDB db;
@@ -47,19 +41,19 @@ final class NativeWriteBatch implements WriteBatch {
 
     @Override
     public synchronized WriteBatch put(@NonNull byte[] key, @NonNull byte[] value) {
-        this.put0(key, value);
+        this.put0(this.ptr.get(), key, value);
         return this;
     }
 
-    private native void put0(byte[] key, byte[] value);
+    private native void put0(long ptr, byte[] key, byte[] value);
 
     @Override
     public synchronized WriteBatch delete(@NonNull byte[] key) {
-        this.delete0(key);
+        this.delete0(this.ptr.get(), key);
         return this;
     }
 
-    private native void delete0(byte[] key);
+    private native void delete0(long ptr, byte[] key);
 
     @Override
     public synchronized void close() throws IOException {

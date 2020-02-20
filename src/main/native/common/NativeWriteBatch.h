@@ -21,18 +21,18 @@ JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeWriteBatch_init
 /*
  * Class:     net_daporkchop_ldbjni_natives_NativeWriteBatch
  * Method:    put0
- * Signature: ([B[B)V
+ * Signature: (J[B[B)V
  */
 JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeWriteBatch_put0
-  (JNIEnv *, jobject, jbyteArray, jbyteArray);
+  (JNIEnv *, jobject, jlong, jbyteArray, jbyteArray);
 
 /*
  * Class:     net_daporkchop_ldbjni_natives_NativeWriteBatch
  * Method:    delete0
- * Signature: ([B)V
+ * Signature: (J[B)V
  */
 JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeWriteBatch_delete0
-  (JNIEnv *, jobject, jbyteArray);
+  (JNIEnv *, jobject, jlong, jbyteArray);
 
 #ifdef __cplusplus
 }
