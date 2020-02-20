@@ -15,7 +15,6 @@
 
 package net.daporkchop.ldbjni.natives;
 
-import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import net.daporkchop.lib.unsafe.PCleaner;
@@ -26,7 +25,7 @@ import java.io.IOException;
 /**
  * @author DaPorkchop_
  */
-@AllArgsConstructor
+@RequiredArgsConstructor
 final class NativeWriteBatch implements WriteBatch {
     static {
         init();
@@ -34,10 +33,16 @@ final class NativeWriteBatch implements WriteBatch {
 
     private static native void init();
 
-    private final long ptr;
+    final long ptr;
 
     private final NativeDB db;
-    private final PCleaner cleaner = PCleaner.cleaner(this, new Releaser(this.ptr, this.db));
+    private final PCleaner cleaner;
+
+    public NativeWriteBatch(long ptr, @NonNull NativeDB db) {
+        this.ptr = ptr;
+        this.db = db;
+        this.cleaner = PCleaner.cleaner(this, new Releaser(this.ptr, this.db));
+    }
 
     @Override
     public WriteBatch put(@NonNull byte[] key, @NonNull byte[] value) {

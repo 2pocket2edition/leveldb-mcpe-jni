@@ -135,12 +135,23 @@ final class NativeDB implements DB {
 
     @Override
     public void write(@NonNull WriteBatch writeBatch) throws DBException {
-        throw new UnsupportedOperationException("writeBatch");
+        if (!(writeBatch instanceof NativeWriteBatch))  {
+            throw new IllegalArgumentException(writeBatch.getClass().getCanonicalName());
+        }
+
+        this.writeBatch0(((NativeWriteBatch) writeBatch).ptr, false);
     }
 
     @Override
     public Snapshot write(@NonNull WriteBatch writeBatch, @NonNull WriteOptions options) throws DBException {
-        throw new UnsupportedOperationException("writeBatch");
+        if (!(writeBatch instanceof NativeWriteBatch))  {
+            throw new IllegalArgumentException(writeBatch.getClass().getCanonicalName());
+        } else if (options.snapshot()) {
+            throw new UnsupportedOperationException("snapshot");
+        }
+
+        this.writeBatch0(((NativeWriteBatch) writeBatch).ptr, options.sync());
+        return null;
     }
 
     private native void writeBatch0(long writeBatch, boolean sync);

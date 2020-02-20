@@ -19,6 +19,8 @@ import net.daporkchop.lib.common.util.PorkUtil;
 import net.daporkchop.lib.encoding.ToBytes;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.Options;
+import org.iq80.leveldb.WriteBatch;
+import org.iq80.leveldb.WriteOptions;
 import org.junit.Test;
 
 import java.io.File;
@@ -45,11 +47,20 @@ public class LevelDBTest {
         }
 
         try (DB db = LevelDB.PROVIDER.open(TEST_ROOT, new Options()))   {
-            IntStream.range(0, 1000).parallel()
+            IntStream.range(0, 100000 / 100)
                     .forEach(i -> {
-                        byte[] arr = new byte[ThreadLocalRandom.current().nextInt(10, 100000)];
-                        //ThreadLocalRandom.current().nextBytes(arr);
-                        db.put(ToBytes.toBytes(i), arr);
+                        try (WriteBatch writeBatch = db.createWriteBatch()) {
+                            for (int j = 0; j < 100; j++) {
+                                byte[] arr = new byte[ThreadLocalRandom.current().nextInt(10, 100000)];
+                                //ThreadLocalRandom.current().nextBytes(arr);
+                                writeBatch.put(ToBytes.toBytes(i * 100 + j), arr);
+                            }
+
+                            db.write(writeBatch, new WriteOptions().sync(false));
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                        System.out.println(i);
                     });
 
             System.out.println(db.get(ToBytes.toBytes(0)).length);
