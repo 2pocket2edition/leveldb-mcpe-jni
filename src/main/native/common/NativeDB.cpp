@@ -133,7 +133,28 @@ JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_delete0
     checkException(env, status);
 }
 
-JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_compactRange
+JNIEXPORT jlong JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_createWriteBatch0
+  (JNIEnv* env, jobject obj)  {
+    return (jlong) new leveldb::WriteBatch();
+}
+
+JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_releaseWriteBatch0
+  (JNIEnv* env, jobject obj, jlong writeBatch)  {
+    delete (leveldb::WriteBatch*) writeBatch;
+}
+
+JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_writeBatch0
+  (JNIEnv* env, jobject obj, jlong writeBatch, jboolean sync)  {
+    auto db = (leveldb::DB*) env->GetLongField(obj, dbID);
+
+    leveldb::WriteOptions writeOptions;
+    writeOptions.sync = sync;
+
+    leveldb::Status status = db->Write(writeOptions, (leveldb::WriteBatch*) writeBatch);
+    checkException(env, status);
+}
+
+JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_compactRange0
   (JNIEnv* env, jobject obj, jbyteArray start, jbyteArray limit)  {
     auto db = (leveldb::DB*) env->GetLongField(obj, dbID);
 

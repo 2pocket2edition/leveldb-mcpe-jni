@@ -68,10 +68,34 @@ JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_delete0
 
 /*
  * Class:     net_daporkchop_ldbjni_natives_NativeDB
- * Method:    compactRange
+ * Method:    createWriteBatch0
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_createWriteBatch0
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     net_daporkchop_ldbjni_natives_NativeDB
+ * Method:    releaseWriteBatch0
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_releaseWriteBatch0
+  (JNIEnv *, jobject, jlong);
+
+/*
+ * Class:     net_daporkchop_ldbjni_natives_NativeDB
+ * Method:    writeBatch0
+ * Signature: (JZ)V
+ */
+JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_writeBatch0
+  (JNIEnv *, jobject, jlong, jboolean);
+
+/*
+ * Class:     net_daporkchop_ldbjni_natives_NativeDB
+ * Method:    compactRange0
  * Signature: ([B[B)V
  */
-JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_compactRange
+JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_compactRange0
   (JNIEnv *, jobject, jbyteArray, jbyteArray);
 
 #ifdef __cplusplus

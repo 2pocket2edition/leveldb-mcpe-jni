@@ -126,18 +126,24 @@ final class NativeDB implements DB {
 
     @Override
     public WriteBatch createWriteBatch() {
-        throw new UnsupportedOperationException("createWriteBatch");
+        return new NativeWriteBatch(this.createWriteBatch0(), this);
     }
 
+    private native long createWriteBatch0();
+
+    native void releaseWriteBatch0(long ptr);
+
     @Override
-    public void write(WriteBatch writeBatch) throws DBException {
+    public void write(@NonNull WriteBatch writeBatch) throws DBException {
         throw new UnsupportedOperationException("writeBatch");
     }
 
     @Override
-    public Snapshot write(WriteBatch writeBatch, WriteOptions options) throws DBException {
+    public Snapshot write(@NonNull WriteBatch writeBatch, @NonNull WriteOptions options) throws DBException {
         throw new UnsupportedOperationException("writeBatch");
     }
+
+    private native void writeBatch0(long writeBatch, boolean sync);
 
     @Override
     public DBIterator iterator() {
@@ -175,7 +181,11 @@ final class NativeDB implements DB {
     }
 
     @Override
-    public native void compactRange(byte[] start, byte[] limit) throws DBException;
+    public void compactRange(byte[] start, byte[] limit) throws DBException {
+        this.compactRange0(start, limit);
+    }
+
+    private native void compactRange0(byte[] start, byte[] limit);
 
     @Override
     public void close() throws IOException {
