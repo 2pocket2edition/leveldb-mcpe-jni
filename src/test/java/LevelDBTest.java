@@ -45,23 +45,31 @@ public class LevelDBTest {
         }
 
         try (DB db = LevelDB.PROVIDER.open(TEST_ROOT, new Options())) {
-            int cnt = 100000;
-            int batchSize = 1000;
-            IntStream.range(0, cnt / batchSize)
-                    .forEach(i -> {
-                        try (WriteBatch writeBatch = db.createWriteBatch()) {
-                            for (int j = 0; j < batchSize; j++) {
-                                byte[] arr = new byte[ThreadLocalRandom.current().nextInt(10, 100000)];
-                                //ThreadLocalRandom.current().nextBytes(arr);
-                                writeBatch.put(ToBytes.toBytes(i * batchSize + j), arr);
-                            }
+            if (false) {
+                int cnt = 100000;
+                int batchSize = 1000;
+                IntStream.range(0, cnt / batchSize)
+                        .forEach(i -> {
+                            try (WriteBatch writeBatch = db.createWriteBatch()) {
+                                for (int j = 0; j < batchSize; j++) {
+                                    byte[] arr = new byte[ThreadLocalRandom.current().nextInt(10, 100000)];
+                                    //ThreadLocalRandom.current().nextBytes(arr);
+                                    writeBatch.put(ToBytes.toBytes(i * batchSize + j), arr);
+                                }
 
-                            db.write(writeBatch);
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                        System.out.println(i);
-                    });
+                                db.write(writeBatch);
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                            System.out.println(i);
+                        });
+            } else if (true)    {
+                db.put(ToBytes.toBytes(0), new byte[1 << 20]);
+
+                //get it a bunch of times to see if the byte[]s are actually being GC-d
+                IntStream.range(0, 1000000).parallel()
+                        .forEach(i -> db.get(ToBytes.toBytes(0)));
+            }
 
             System.out.println(db.get(ToBytes.toBytes(0)).length);
             db.delete(ToBytes.toBytes(0));

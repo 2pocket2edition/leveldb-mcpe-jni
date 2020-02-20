@@ -20,7 +20,7 @@ ext {
     //general things
     javaVersion = "1.8"
     minecraftVersion = "1.12.2"
-    programVersion = "0.0.1-SNAPSHOT"
+    programVersion = "0.0.2-SNAPSHOT"
 
     //dependency things
     junitVersion = "4.12"

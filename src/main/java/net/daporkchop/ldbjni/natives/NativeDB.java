@@ -266,11 +266,16 @@ final class NativeDB implements DB {
 
     @Override
     public void close() throws IOException {
+        if (this.cleaner.isCleaned())   {
+            //fast-track return to avoid locking
+            return;
+        }
         this.writeLock.lock();
         try {
-            this.assertOpen();
-            this.cleaner.clean();
-            this.db = this.dca = 0L;
+            if (!this.cleaner.isCleaned())   {
+                this.cleaner.clean();
+                this.db = this.dca = 0L;
+            }
         } finally {
             this.writeLock.unlock();
         }
