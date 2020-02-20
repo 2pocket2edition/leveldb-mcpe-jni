@@ -140,11 +140,21 @@ JNIEXPORT jlong JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_createWriteB
 
 JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_releaseWriteBatch0
   (JNIEnv* env, jobject obj, jlong writeBatch)  {
+    if ((leveldb::WriteBatch*) writeBatch == nullptr)  {
+        throwISE(env, "NativeWriteBatch has already been closed!");
+        return;
+    }
+
     delete (leveldb::WriteBatch*) writeBatch;
 }
 
 JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_writeBatch0
   (JNIEnv* env, jobject obj, jlong writeBatch, jboolean sync)  {
+    if ((leveldb::WriteBatch*) writeBatch == nullptr)  {
+        throwISE(env, "NativeWriteBatch has already been closed!");
+        return;
+    }
+
     auto db = (leveldb::DB*) env->GetLongField(obj, dbID);
 
     leveldb::WriteOptions writeOptions;

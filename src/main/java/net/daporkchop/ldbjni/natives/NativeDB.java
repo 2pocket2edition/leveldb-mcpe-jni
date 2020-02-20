@@ -30,6 +30,9 @@ import org.iq80.leveldb.WriteOptions;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * @author DaPorkchop_
@@ -48,15 +51,16 @@ final class NativeDB implements DB {
 
     private static native void closeDb(long db, long dca);
 
-    private final long     db;
-    private final long     dca;
+    private       long     db;
+    private       long     dca;
     private final PCleaner cleaner;
+
+    private final Lock readLock;
+    private final Lock writeLock;
 
     public NativeDB(@NonNull File path, @NonNull Options options) {
         if (options.comparator() != null) {
             throw new UnsupportedOperationException("comparator");
-        //} else if (options.logger() != null) {
-        //    throw new UnsupportedOperationException("logger");
         } else if (options.compressionType() == null) {
             throw new NullPointerException("compressionType");
         }
@@ -76,23 +80,45 @@ final class NativeDB implements DB {
         this.dca = createDecompressAllocator();
 
         this.cleaner = PCleaner.cleaner(this, new Releaser(this.db, this.dca));
+
+        ReadWriteLock lock = new ReentrantReadWriteLock();
+        this.readLock = lock.readLock();
+        this.writeLock = lock.writeLock();
     }
 
     @Override
-    public byte[] get(@NonNull byte[] key) throws DBException    {
-        return this.get0(key, false, true, 0L);
+    public byte[] get(@NonNull byte[] key) throws DBException {
+        this.readLock.lock();
+        try {
+            this.assertOpen();
+            return this.get0(key, false, true, 0L);
+        } finally {
+            this.readLock.unlock();
+        }
     }
 
     @Override
     public byte[] get(@NonNull byte[] key, @NonNull ReadOptions options) throws DBException {
-        return this.get0(key, options.verifyChecksums(), options.fillCache(), 0L); //TODO: snapshot
+        this.readLock.lock();
+        try {
+            this.assertOpen();
+            return this.get0(key, options.verifyChecksums(), options.fillCache(), 0L); //TODO: snapshot
+        } finally {
+            this.readLock.unlock();
+        }
     }
 
     private native byte[] get0(byte[] key, boolean verifyChecksums, boolean fillCache, long snapshot);
 
     @Override
     public void put(@NonNull byte[] key, @NonNull byte[] value) throws DBException {
-        this.put0(key, value, false);
+        this.readLock.lock();
+        try {
+            this.assertOpen();
+            this.put0(key, value, false);
+        } finally {
+            this.readLock.unlock();
+        }
     }
 
     @Override
@@ -101,15 +127,27 @@ final class NativeDB implements DB {
             throw new UnsupportedOperationException("snapshot");
         }
 
-        this.put0(key, value, options.sync());
-        return null;
+        this.readLock.lock();
+        try {
+            this.assertOpen();
+            this.put0(key, value, options.sync());
+            return null;
+        } finally {
+            this.readLock.unlock();
+        }
     }
 
     private native void put0(byte[] key, byte[] value, boolean sync);
 
     @Override
     public void delete(@NonNull byte[] key) throws DBException {
-        this.delete0(key, false);
+        this.readLock.lock();
+        try {
+            this.assertOpen();
+            this.delete0(key, false);
+        } finally {
+            this.readLock.unlock();
+        }
     }
 
     @Override
@@ -118,8 +156,14 @@ final class NativeDB implements DB {
             throw new UnsupportedOperationException("snapshot");
         }
 
-        this.delete0(key, options.sync());
-        return null;
+        this.readLock.lock();
+        try {
+            this.assertOpen();
+            this.delete0(key, options.sync());
+            return null;
+        } finally {
+            this.readLock.unlock();
+        }
     }
 
     private native void delete0(byte[] key, boolean sync);
@@ -135,23 +179,39 @@ final class NativeDB implements DB {
 
     @Override
     public void write(@NonNull WriteBatch writeBatch) throws DBException {
-        if (!(writeBatch instanceof NativeWriteBatch))  {
+        if (!(writeBatch instanceof NativeWriteBatch)) {
             throw new IllegalArgumentException(writeBatch.getClass().getCanonicalName());
         }
 
-        this.writeBatch0(((NativeWriteBatch) writeBatch).ptr, false);
+        this.readLock.lock();
+        try {
+            this.assertOpen();
+            synchronized (writeBatch) {
+                this.writeBatch0(((NativeWriteBatch) writeBatch).ptr.get(), false);
+            }
+        } finally {
+            this.readLock.unlock();
+        }
     }
 
     @Override
     public Snapshot write(@NonNull WriteBatch writeBatch, @NonNull WriteOptions options) throws DBException {
-        if (!(writeBatch instanceof NativeWriteBatch))  {
+        if (!(writeBatch instanceof NativeWriteBatch)) {
             throw new IllegalArgumentException(writeBatch.getClass().getCanonicalName());
         } else if (options.snapshot()) {
             throw new UnsupportedOperationException("snapshot");
         }
 
-        this.writeBatch0(((NativeWriteBatch) writeBatch).ptr, options.sync());
-        return null;
+        this.readLock.lock();
+        try {
+            this.assertOpen();
+            synchronized (writeBatch) {
+                this.writeBatch0(((NativeWriteBatch) writeBatch).ptr.get(), options.sync());
+            }
+            return null;
+        } finally {
+            this.readLock.unlock();
+        }
     }
 
     private native void writeBatch0(long writeBatch, boolean sync);
@@ -193,14 +253,33 @@ final class NativeDB implements DB {
 
     @Override
     public void compactRange(byte[] start, byte[] limit) throws DBException {
-        this.compactRange0(start, limit);
+        this.readLock.lock();
+        try {
+            this.assertOpen();
+            this.compactRange0(start, limit);
+        } finally {
+            this.readLock.unlock();
+        }
     }
 
     private native void compactRange0(byte[] start, byte[] limit);
 
     @Override
     public void close() throws IOException {
-        this.cleaner.clean();
+        this.writeLock.lock();
+        try {
+            this.assertOpen();
+            this.cleaner.clean();
+            this.db = this.dca = 0L;
+        } finally {
+            this.writeLock.unlock();
+        }
+    }
+
+    private void assertOpen() {
+        if (this.db == 0L) {
+            throw new IllegalStateException("NativeDB already closed!");
+        }
     }
 
     @RequiredArgsConstructor

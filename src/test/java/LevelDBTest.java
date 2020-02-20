@@ -15,12 +15,10 @@
 
 import net.daporkchop.ldbjni.LevelDB;
 import net.daporkchop.lib.common.misc.file.PFiles;
-import net.daporkchop.lib.common.util.PorkUtil;
 import net.daporkchop.lib.encoding.ToBytes;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.Options;
 import org.iq80.leveldb.WriteBatch;
-import org.iq80.leveldb.WriteOptions;
 import org.junit.Test;
 
 import java.io.File;
@@ -35,28 +33,30 @@ public class LevelDBTest {
     public static final File TEST_ROOT = new File("test_out");
 
     static {
-        if (PFiles.checkDirectoryExists(TEST_ROOT))    {
+        if (PFiles.checkDirectoryExists(TEST_ROOT)) {
             PFiles.rmContents(TEST_ROOT);
         }
     }
 
     @Test
-    public void test() throws IOException   {
-        if (!LevelDB.PROVIDER.isNative())   {
+    public void test() throws IOException {
+        if (!LevelDB.PROVIDER.isNative()) {
             throw new IllegalStateException("Not using native LevelDB!");
         }
 
-        try (DB db = LevelDB.PROVIDER.open(TEST_ROOT, new Options()))   {
-            IntStream.range(0, 100000 / 100)
+        try (DB db = LevelDB.PROVIDER.open(TEST_ROOT, new Options())) {
+            int cnt = 100000;
+            int batchSize = 1000;
+            IntStream.range(0, cnt / batchSize)
                     .forEach(i -> {
                         try (WriteBatch writeBatch = db.createWriteBatch()) {
-                            for (int j = 0; j < 100; j++) {
+                            for (int j = 0; j < batchSize; j++) {
                                 byte[] arr = new byte[ThreadLocalRandom.current().nextInt(10, 100000)];
                                 //ThreadLocalRandom.current().nextBytes(arr);
-                                writeBatch.put(ToBytes.toBytes(i * 100 + j), arr);
+                                writeBatch.put(ToBytes.toBytes(i * batchSize + j), arr);
                             }
 
-                            db.write(writeBatch, new WriteOptions().sync(false));
+                            db.write(writeBatch);
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
@@ -69,7 +69,7 @@ public class LevelDBTest {
             try {
                 System.out.println(db.get(ToBytes.toBytes(0)).length);
                 throw new IllegalStateException();
-            } catch (NullPointerException e)    {
+            } catch (NullPointerException e) {
                 //this should be thrown
             }
 

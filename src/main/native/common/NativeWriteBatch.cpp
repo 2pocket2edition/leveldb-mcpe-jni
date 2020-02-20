@@ -12,6 +12,11 @@ JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeWriteBatch_put0
   (JNIEnv* env, jobject obj, jbyteArray key, jbyteArray value)  {
     auto writeBatch = (leveldb::WriteBatch*) env->GetLongField(obj, ptrID);
 
+    if (writeBatch == nullptr)  {
+        throwISE(env, "NativeWriteBatch has already been closed!");
+        return;
+    }
+
     int keyLength = env->GetArrayLength(key);
     char* keyRaw = new char[keyLength];
     env->GetByteArrayRegion(key, 0, keyLength, (jbyte*) keyRaw);
@@ -30,6 +35,11 @@ JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeWriteBatch_put0
 JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeWriteBatch_delete0
   (JNIEnv* env, jobject obj, jbyteArray key)  {
     auto writeBatch = (leveldb::WriteBatch*) env->GetLongField(obj, ptrID);
+
+    if (writeBatch == nullptr)  {
+        throwISE(env, "NativeWriteBatch has already been closed!");
+        return;
+    }
 
     int keyLength = env->GetArrayLength(key);
     char* keyRaw = new char[keyLength];

@@ -21,6 +21,7 @@ import net.daporkchop.lib.unsafe.PCleaner;
 import org.iq80.leveldb.WriteBatch;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author DaPorkchop_
@@ -33,19 +34,19 @@ final class NativeWriteBatch implements WriteBatch {
 
     private static native void init();
 
-    final long ptr;
+    final AtomicLong ptr;
 
     private final NativeDB db;
     private final PCleaner cleaner;
 
     public NativeWriteBatch(long ptr, @NonNull NativeDB db) {
-        this.ptr = ptr;
+        this.ptr = new AtomicLong(ptr);
         this.db = db;
         this.cleaner = PCleaner.cleaner(this, new Releaser(this.ptr, this.db));
     }
 
     @Override
-    public WriteBatch put(@NonNull byte[] key, @NonNull byte[] value) {
+    public synchronized WriteBatch put(@NonNull byte[] key, @NonNull byte[] value) {
         this.put0(key, value);
         return this;
     }
@@ -53,7 +54,7 @@ final class NativeWriteBatch implements WriteBatch {
     private native void put0(byte[] key, byte[] value);
 
     @Override
-    public WriteBatch delete(@NonNull byte[] key) {
+    public synchronized WriteBatch delete(@NonNull byte[] key) {
         this.delete0(key);
         return this;
     }
@@ -61,19 +62,20 @@ final class NativeWriteBatch implements WriteBatch {
     private native void delete0(byte[] key);
 
     @Override
-    public void close() throws IOException {
+    public synchronized void close() throws IOException {
         this.cleaner.clean();
     }
 
     @RequiredArgsConstructor
     private static final class Releaser implements Runnable {
-        private final long     ptr;
+        @NonNull
+        private final AtomicLong     ptr;
         @NonNull
         private final NativeDB db;
 
         @Override
         public void run() {
-            this.db.releaseWriteBatch0(this.ptr);
+            this.db.releaseWriteBatch0(this.ptr.getAndSet(0L));
         }
     }
 }
