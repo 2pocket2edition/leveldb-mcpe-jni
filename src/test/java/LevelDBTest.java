@@ -45,7 +45,7 @@ public class LevelDBTest {
         }
 
         try (DB db = LevelDB.PROVIDER.open(TEST_ROOT, new Options())) {
-            if (false) {
+            if (true) {
                 int cnt = 100000;
                 int batchSize = 1000;
                 IntStream.range(0, cnt / batchSize)
@@ -63,7 +63,7 @@ public class LevelDBTest {
                             }
                             System.out.println(i);
                         });
-            } else if (true)    {
+            } else if (false)    {
                 db.put(ToBytes.toBytes(0), new byte[1 << 20]);
 
                 //get it a bunch of times to see if the byte[]s are actually being GC-d
