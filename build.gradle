@@ -75,6 +75,20 @@ task sourceJar(type: Jar) {
 }
 
 publishing {
+    repositories {
+        if (project.hasProperty("nukkitxMavenUsername") && project.hasProperty("nukkitxMavenPassword")) {
+            maven {
+                credentials {
+                    username = "$nukkitxMavenUsername"
+                    password = "$nukkitxMavenPassword"
+                }
+
+                name = "NukkitX"
+                url = url = version.endsWith('SNAPSHOT') ? "https://repo.nukkitx.com/snapshot" : "https://repo.nukkitx.com/release"
+            }
+        }
+    }
+
     publications {
         maven(MavenPublication) {
             groupId = project.group
@@ -90,7 +104,8 @@ publishing {
     }
 }
 
-build.dependsOn(publishToMavenLocal)
+publish.dependsOn(publishToMavenLocal)
+build.dependsOn(publish)
 
 if (System.getProperty("os.name", "").toLowerCase().replaceAll("[^a-z0-9]+", "").startsWith("windows")) {
     throw new IllegalStateException("You are running Windows, which is bad and you should feel bad.\nThis means that native libraries cannot be built.")
