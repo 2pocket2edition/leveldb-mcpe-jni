@@ -49,7 +49,8 @@ final class NativeDB implements DB {
 
     private static native void init();
 
-    private static native long openDb(String name, boolean create_if_missing, boolean error_if_exists, boolean paranoid_checks, int write_buffer_size,
+    private static native long openDb(String name,
+                                      boolean create_if_missing, boolean error_if_exists, boolean paranoid_checks, int write_buffer_size,
                                       int max_open_files, int block_size, int block_restart_interval, int max_file_size, int compression, long cacheSize);
 
     private static native long createDecompressAllocator();

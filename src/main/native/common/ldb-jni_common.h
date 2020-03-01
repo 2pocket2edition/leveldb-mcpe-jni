@@ -22,4 +22,8 @@ jint throwException(JNIEnv* env, const char* msg, jint err);
 
 jint throwException(JNIEnv* env, const char* msg, jlong err);
 
+void loadOptions(JNIEnv* env, leveldb::Options& options,
+     jboolean create_if_missing, jboolean error_if_exists, jboolean paranoid_checks, jint write_buffer_size,
+     jint max_open_files, jint block_size, jint block_restart_interval, jint max_file_size, jint compression, jlong cacheSize);
+
 #endif //_Included_ldbjni_common_h

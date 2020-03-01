@@ -61,9 +61,7 @@ repositories {
 dependencies {
     compile "net.daporkchop.lib:natives:$porklibVersion"
 
-    compile ("org.iq80.leveldb:leveldb:$leveldbapiVersion")    {
-        exclude group: "com.google.guava"
-    }
+    compile "org.iq80.leveldb:leveldb:$leveldbapiVersion"
 
     testCompile "net.daporkchop.lib:encoding:$porklibVersion"
 

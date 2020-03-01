@@ -33,6 +33,14 @@ import java.io.IOException;
  * @author DaPorkchop_
  */
 final class NativeDBProvider implements DBProvider {
+    private static native void destroy0(String file,
+                                        boolean create_if_missing, boolean error_if_exists, boolean paranoid_checks, int write_buffer_size,
+                                        int max_open_files, int block_size, int block_restart_interval, int max_file_size, int compression, long cacheSize) throws IOException;
+
+    private static native void repair0(String file,
+                                       boolean create_if_missing, boolean error_if_exists, boolean paranoid_checks, int write_buffer_size,
+                                       int max_open_files, int block_size, int block_restart_interval, int max_file_size, int compression, long cacheSize) throws IOException;
+
     @Override
     public boolean isNative() {
         return true;
@@ -45,9 +53,33 @@ final class NativeDBProvider implements DBProvider {
 
     @Override
     public void destroy(File file, Options options) throws IOException {
+        destroy0(
+                file.getAbsoluteFile().getAbsolutePath(),
+                options.createIfMissing(),
+                options.errorIfExists(),
+                options.paranoidChecks(),
+                options.writeBufferSize(),
+                options.maxOpenFiles(),
+                options.blockSize(),
+                options.blockRestartInterval(),
+                -1, //not present in Options...
+                options.compressionType().persistentId(),
+                options.cacheSize());
     }
 
     @Override
     public void repair(File file, Options options) throws IOException {
+        repair0(
+                file.getAbsoluteFile().getAbsolutePath(),
+                options.createIfMissing(),
+                options.errorIfExists(),
+                options.paranoidChecks(),
+                options.writeBufferSize(),
+                options.maxOpenFiles(),
+                options.blockSize(),
+                options.blockRestartInterval(),
+                -1, //not present in Options...
+                options.compressionType().persistentId(),
+                options.cacheSize());
     }
 }

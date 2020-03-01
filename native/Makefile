@@ -47,9 +47,9 @@ libldb-jni.$(EXT): $(CFILES) $(CPPFILES) $(OFILES) $(CURDIR)/lib-leveldb/libleve
 	$(CXX) $(CXXFLAGS) $(INCLUDE) -c $(subst .o,,$(subst __,/,$@)) -o $@
 
 $(CURDIR)/lib-leveldb/libleveldb.a: $(TOPDIR)/leveldb-mcpe-1.22.tar.gz $(CURDIR)/lib-zlib/libz.a
-	@[ ! -d lib-leveldb/ ] || rm -rf lib-leveldb/
-	@tar zxf $(TOPDIR)/leveldb-mcpe-1.22.tar.gz
-	@mv leveldb-mcpe-1.22/ lib-leveldb/
+#	@[ ! -d lib-leveldb/ ] || rm -rf lib-leveldb/
+#	@tar zxf $(TOPDIR)/leveldb-mcpe-1.22.tar.gz
+#	@mv leveldb-mcpe-1.22/ lib-leveldb/
 	@[ -f "$(TOOLCHAINS)/$(BUILD).cmake" ]
 	@cd lib-leveldb/ && cmake \
 		-DCMAKE_TOOLCHAIN_FILE="$(TOOLCHAINS)/$(BUILD).cmake" \

@@ -24,7 +24,8 @@ JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_init
  * Signature: (Ljava/lang/String;ZZZIIIIIIJ)J
  */
 JNIEXPORT jlong JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_openDb
-  (JNIEnv *, jclass, jstring, jboolean, jboolean, jboolean, jint, jint, jint, jint, jint, jint, jlong);
+  (JNIEnv *, jclass, jstring,
+   jboolean, jboolean, jboolean, jint, jint, jint, jint, jint, jint, jlong);
 
 /*
  * Class:     net_daporkchop_ldbjni_natives_NativeDB
