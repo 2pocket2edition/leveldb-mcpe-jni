@@ -21,8 +21,10 @@
 package net.daporkchop.ldbjni.natives;
 
 import net.daporkchop.ldbjni.DBProvider;
+import net.daporkchop.lib.common.misc.file.PFiles;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.Options;
+import org.iq80.leveldb.impl.Iq80DBFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,6 +50,17 @@ final class NativeDBProvider implements DBProvider {
 
     @Override
     public DB open(File file, Options options) throws IOException {
+        if (PFiles.checkDirectoryExists(file) && PFiles.checkFileExists(new File(file, "CURRENT")))  {
+            //database has already been created
+            File fixedFile = new File(file, "FIXED_MANIFEST");
+            if (!PFiles.checkFileExists(fixedFile)) {
+                //database manifest may not have been corrected by my horrible hack for the broken Java leveldb
+                // (see https://github.com/NukkitX/leveldb/pull/1)
+                try (DB db = Iq80DBFactory.factory.open(file, options)) {
+                }
+                PFiles.ensureFileExists(fixedFile);
+            }
+        }
         return new NativeDB(file, options);
     }
 

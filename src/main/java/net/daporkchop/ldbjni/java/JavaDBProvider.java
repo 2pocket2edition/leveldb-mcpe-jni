@@ -21,6 +21,7 @@
 package net.daporkchop.ldbjni.java;
 
 import net.daporkchop.ldbjni.DBProvider;
+import net.daporkchop.lib.common.misc.file.PFiles;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.Options;
 import org.iq80.leveldb.impl.Iq80DBFactory;
@@ -41,6 +42,16 @@ final class JavaDBProvider implements DBProvider {
 
     @Override
     public DB open(File file, Options options) throws IOException {
+        if (PFiles.checkDirectoryExists(file) && PFiles.checkFileExists(new File(file, "CURRENT"))) {
+            //database has already been created
+            File fixedFile = new File(file, "FIXED_MANIFEST");
+            if (PFiles.checkFileExists(fixedFile)) {
+                //remove manifest fixed flag if it already exists, because we can't be certain that the manifest will contain the correct fileSize
+                // parameters if a new table is created. this allows the fallback to java leveldb to be totally safe (although it is possible that
+                // if the db is opened using java leveldb that isn't wrapped by this library it will be broken, but that's quite an obscure edge case)
+                PFiles.rm(fixedFile);
+            }
+        }
         return Iq80DBFactory.factory.open(file, options);
     }
 

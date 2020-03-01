@@ -25,12 +25,12 @@ ext {
     //general things
     javaVersion = "1.8"
     minecraftVersion = "1.12.2"
-    programVersion = "0.0.5-SNAPSHOT"
+    programVersion = "0.0.6-SNAPSHOT"
 
     //dependency things
     junitVersion = "4.12"
     lombokVersion = "1.16.20"
-    leveldbapiVersion = "0.11-SNAPSHOT"
+    leveldbVersion = "0.11.1-SNAPSHOT"
     porklibVersion = "0.5.3-SNAPSHOT"
 }
 
@@ -61,7 +61,7 @@ repositories {
 dependencies {
     compile "net.daporkchop.lib:natives:$porklibVersion"
 
-    compile "org.iq80.leveldb:leveldb:$leveldbapiVersion"
+    compile "org.iq80.leveldb:leveldb:$leveldbVersion"
 
     testCompile "net.daporkchop.lib:encoding:$porklibVersion"
 
