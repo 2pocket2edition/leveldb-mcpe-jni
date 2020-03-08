@@ -24,14 +24,13 @@ apply plugin: "maven-publish"
 ext {
     //general things
     javaVersion = "1.8"
-    minecraftVersion = "1.12.2"
-    programVersion = "0.0.6-SNAPSHOT"
+    programVersion = "0.0.7-SNAPSHOT"
 
     //dependency things
     junitVersion = "4.12"
     lombokVersion = "1.16.20"
     leveldbVersion = "0.11.1-SNAPSHOT"
-    porklibVersion = "0.5.3-SNAPSHOT"
+    porklibVersion = "0.5.4-SNAPSHOT"
 }
 
 group "net.daporkchop"
