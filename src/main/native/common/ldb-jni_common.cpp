@@ -94,14 +94,31 @@ void loadOptions(JNIEnv* env, leveldb::Options& options,
 
     switch (compression)    {
         case 0x01: //SNAPPY
-            //enabled by default
+#if HAVE_SNAPPY
+            options.compressors[0] = new leveldb::SnappyCompressor();
+        	options.compressors[1] = new leveldb::ZlibCompressorRaw();
+        	options.compressors[2] = new leveldb::ZlibCompressor();
+            break;
+#else
+            throwException(env, "SNAPPY compression is unsupported on your platform!", compression);
+            return;
+#endif
+        case 0x02: //ZLIB
+        	options.compressors[0] = new leveldb::ZlibCompressor();
+        	options.compressors[1] = new leveldb::ZlibCompressorRaw();
+#if HAVE_SNAPPY
+            options.compressors[2] = new leveldb::SnappyCompressor();
+#endif
             break;
         case 0x04: //ZLIB_RAW
-        	options.compressors[0] = new leveldb::ZlibCompressorRaw(-1);
-        	options.compressors[1] = new leveldb::ZlibCompressor(); //for compatibility
+        	options.compressors[0] = new leveldb::ZlibCompressorRaw();
+        	options.compressors[1] = new leveldb::ZlibCompressor();
+#if HAVE_SNAPPY
+            options.compressors[2] = new leveldb::SnappyCompressor();
+#endif
         	break;
         default:
-            throwException(env, "Invalid compression type (must be SNAPPY or ZLIB_RAW):", compression);
+            throwException(env, "Invalid compression type (must be SNAPPY, ZLIB or ZLIB_RAW):", compression);
             return;
     }
 

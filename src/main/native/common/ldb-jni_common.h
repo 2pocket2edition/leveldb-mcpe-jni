@@ -6,6 +6,8 @@
 #include <leveldb/decompress_allocator.h>
 #include <leveldb/filter_policy.h>
 #include <leveldb/write_batch.h>
+
+#include <leveldb/snappy_compressor.h>
 #include <leveldb/zlib_compressor.h>
 
 #include <jni.h>

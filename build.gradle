@@ -24,7 +24,7 @@ apply plugin: "maven-publish"
 ext {
     //general things
     javaVersion = "1.8"
-    programVersion = "0.0.7-SNAPSHOT"
+    programVersion = "0.0.8-SNAPSHOT"
 
     //dependency things
     junitVersion = "4.12"

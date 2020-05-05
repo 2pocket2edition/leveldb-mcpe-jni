@@ -11,18 +11,28 @@ JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeWriteBatch_put0
     }
 
     int keyLength = env->GetArrayLength(key);
-    char* keyRaw = new char[keyLength];
-    env->GetByteArrayRegion(key, 0, keyLength, (jbyte*) keyRaw);
-    leveldb::Slice keySlice(keyRaw, keyLength);
-
     int valueLength = env->GetArrayLength(value);
-    char* valueRaw = new char[valueLength];
-    env->GetByteArrayRegion(value, 0, valueLength, (jbyte*) valueRaw);
-    leveldb::Slice valueSlice(valueRaw, valueLength);
+
+    auto keyPtr = (char*) env->GetPrimitiveArrayCritical(key, nullptr);
+    if (!keyPtr)    {
+        throwISE(env, "Unable to pin key array");
+        return;
+    }
+
+    auto valuePtr = (char*) env->GetPrimitiveArrayCritical(value, nullptr);
+    if (!valuePtr)    {
+        env->ReleasePrimitiveArrayCritical(key, keyPtr, 0);
+        throwISE(env, "Unable to pin value array");
+        return;
+    }
+
+    leveldb::Slice keySlice(keyPtr, keyLength);
+    leveldb::Slice valueSlice(valuePtr, valueLength);
 
     writeBatch->Put(keySlice, valueSlice);
-    delete keyRaw;
-    delete valueRaw;
+
+    env->ReleasePrimitiveArrayCritical(value, valuePtr, 0);
+    env->ReleasePrimitiveArrayCritical(key, keyPtr, 0);
 }
 
 JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeWriteBatch_delete0
@@ -35,10 +45,14 @@ JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeWriteBatch_delet
     }
 
     int keyLength = env->GetArrayLength(key);
-    char* keyRaw = new char[keyLength];
-    env->GetByteArrayRegion(key, 0, keyLength, (jbyte*) keyRaw);
-    leveldb::Slice keySlice(keyRaw, keyLength);
 
-    writeBatch->Delete(keySlice);
-    delete keyRaw;
+    auto keyPtr = (char*) env->GetPrimitiveArrayCritical(key, nullptr);
+    if (!keyPtr)    {
+        throwISE(env, "Unable to pin key array");
+        return;
+    }
+
+    leveldb::Slice keySlice(keyPtr, keyLength);
+
+    env->ReleasePrimitiveArrayCritical(key, keyPtr, 0);
 }

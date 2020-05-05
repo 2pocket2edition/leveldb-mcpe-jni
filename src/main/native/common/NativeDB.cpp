@@ -52,13 +52,17 @@ JNIEXPORT jbyteArray JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_get0
     readOptions.decompress_allocator = (leveldb::DecompressAllocator*) env->GetLongField(obj, dcaID);
 
     int keyLength = env->GetArrayLength(key);
-    char* keyRaw = new char[keyLength];
-    env->GetByteArrayRegion(key, 0, keyLength, (jbyte*) keyRaw);
-    leveldb::Slice keySlice(keyRaw, keyLength);
+    auto keyPtr = (char*) env->GetPrimitiveArrayCritical(key, nullptr);
+    if (!keyPtr)    {
+        throwISE(env, "Unable to pin key array");
+        return nullptr;
+    }
+    leveldb::Slice keySlice(keyPtr, keyLength);
 
     std::string value;
     leveldb::Status status = db->Get(readOptions, keySlice, &value);
-    delete keyRaw;
+
+    env->ReleasePrimitiveArrayCritical(key, keyPtr, 0);
 
     if (status.IsNotFound() || checkException(env, status))    {
         return (jbyteArray) nullptr;
