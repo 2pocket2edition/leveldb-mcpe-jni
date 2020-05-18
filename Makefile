@@ -30,7 +30,7 @@ export ARCH_TASKS	:=	$(foreach arch,$(ARCHS),build.$(arch))
 export MODULES		:=	native
 
 export LIB_URL_BASE	:=	https://cloud.daporkchop.net/programs/source/
-export LIBS			:=	leveldb-mcpe-1.22.tar.gz zlib-ng-1.2.11.tar.gz
+export LIBS			:=	leveldb-mcpe-1.22.tar.gz zlib-ng-1.2.11.tar.gz snappy-1.1.8.tar.gz
 
 .PHONY: build clean .FORCE
 

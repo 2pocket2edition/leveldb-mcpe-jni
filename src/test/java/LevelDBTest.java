@@ -21,6 +21,7 @@
 import net.daporkchop.ldbjni.LevelDB;
 import net.daporkchop.lib.common.misc.file.PFiles;
 import net.daporkchop.lib.encoding.ToBytes;
+import org.iq80.leveldb.CompressionType;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.Options;
 import org.iq80.leveldb.WriteBatch;
@@ -49,7 +50,7 @@ public class LevelDBTest {
             throw new IllegalStateException("Not using native LevelDB!");
         }
 
-        try (DB db = LevelDB.PROVIDER.open(TEST_ROOT, new Options())) {
+        try (DB db = LevelDB.PROVIDER.open(TEST_ROOT, new Options().compressionType(CompressionType.SNAPPY))) {
             if (true) {
                 int cnt = 100000;
                 int batchSize = 1000;
