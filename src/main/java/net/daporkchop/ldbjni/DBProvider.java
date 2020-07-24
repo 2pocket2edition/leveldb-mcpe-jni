@@ -20,7 +20,7 @@
 
 package net.daporkchop.ldbjni;
 
-import net.daporkchop.lib.natives.impl.Feature;
+import net.daporkchop.lib.natives.Feature;
 import org.iq80.leveldb.DBFactory;
 
 /**

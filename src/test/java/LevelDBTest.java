@@ -18,13 +18,17 @@
  *
  */
 
+import lombok.NonNull;
 import net.daporkchop.ldbjni.LevelDB;
+import net.daporkchop.lib.common.function.io.IOConsumer;
 import net.daporkchop.lib.common.misc.file.PFiles;
 import net.daporkchop.lib.encoding.ToBytes;
 import org.iq80.leveldb.CompressionType;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.Options;
 import org.iq80.leveldb.WriteBatch;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.File;
@@ -38,62 +42,72 @@ import java.util.stream.IntStream;
 public class LevelDBTest {
     public static final File TEST_ROOT = new File("test_out");
 
-    static {
+    @BeforeClass
+    public static void ensureNative()  {
+        if (!LevelDB.PROVIDER.isNative()) {
+            throw new IllegalStateException("Not using native LevelDB!");
+        }
+    }
+
+    @Before
+    public void nukeTestDir()   {
         if (PFiles.checkDirectoryExists(TEST_ROOT)) {
-            PFiles.rmContents(TEST_ROOT);
+            System.out.println("Nuking " + TEST_ROOT);
+            PFiles.rmContentsParallel(TEST_ROOT);
         }
     }
 
     @Test
-    public void test() throws IOException {
-        if (!LevelDB.PROVIDER.isNative()) {
-            throw new IllegalStateException("Not using native LevelDB!");
-        }
-
-        try (DB db = LevelDB.PROVIDER.open(TEST_ROOT, new Options().compressionType(CompressionType.SNAPPY))) {
-            if (true) {
-                int cnt = 100000;
-                int batchSize = 1000;
-                IntStream.range(0, cnt / batchSize)
-                        .forEach(i -> {
-                            try (WriteBatch writeBatch = db.createWriteBatch()) {
-                                for (int j = 0; j < batchSize; j++) {
-                                    byte[] arr = new byte[ThreadLocalRandom.current().nextInt(10, 100000)];
-                                    //ThreadLocalRandom.current().nextBytes(arr);
-                                    writeBatch.put(ToBytes.toBytes(i * batchSize + j), arr);
-                                }
-
-                                db.write(writeBatch);
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
+    public void testManyWrites() throws IOException {
+        this.doTest(db -> {
+            int cnt = 100000;
+            int batchSize = 1000;
+            IntStream.range(0, cnt / batchSize)
+                    .forEach(i -> {
+                        try (WriteBatch writeBatch = db.createWriteBatch()) {
+                            for (int j = 0; j < batchSize; j++) {
+                                byte[] arr = new byte[ThreadLocalRandom.current().nextInt(10, 100000)];
+                                writeBatch.put(ToBytes.toBytes(i * batchSize + j), arr);
                             }
-                            System.out.println(i);
-                        });
-            } else if (false)    {
-                db.put(ToBytes.toBytes(0), new byte[1 << 20]);
 
-                //get it a bunch of times to see if the byte[]s are actually being GC-d
-                IntStream.range(0, 1000000).parallel()
-                        .forEach(i -> db.get(ToBytes.toBytes(0)));
-            }
+                            db.write(writeBatch);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                        System.out.println(i);
+                    });
+        }, CompressionType.NONE);
+    }
 
-            System.out.println(db.get(ToBytes.toBytes(0)).length);
-            db.delete(ToBytes.toBytes(0));
+    @Test
+    public void testManyReads() throws IOException  {
+        this.doTest(db -> {
+            //write a single large entry
+            db.put(ToBytes.toBytes(0), new byte[1 << 20]);
 
-            try {
-                System.out.println(db.get(ToBytes.toBytes(0)).length);
-                throw new IllegalStateException();
-            } catch (NullPointerException e) {
-                //this should be thrown
-            }
+            //compact it
+            db.compactRange(null, null);
 
-            System.out.println("Wrote values!");
+            //get it a bunch of times to see if the byte[]s are actually being GC-d
+            IntStream.range(0, 10000 * 2).parallel()
+                    .peek(i -> {
+                        if ((i & 511) == 0)    {
+                            System.gc();
+                        }
+                    })
+                    .forEach(i -> db.get(ToBytes.toBytes(0)));
+        }, CompressionType.SNAPPY);
+    }
 
-            db.compactRange(ToBytes.toBytes(0), ToBytes.toBytes(100));
+    private void doTest(@NonNull IOConsumer<DB> code, @NonNull CompressionType compression) throws IOException  {
+        System.out.printf("Opening DB with compression: %s...\n", compression);
+        try (DB db = LevelDB.PROVIDER.open(TEST_ROOT, new Options().compressionType(compression)))   {
+            System.out.println("Opened DB!");
+
+            code.acceptThrowing(db);
 
             System.out.println("Closing DB...");
         }
-
         System.out.println("Closed DB!");
     }
 }

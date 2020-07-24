@@ -24,13 +24,13 @@ apply plugin: "maven-publish"
 ext {
     //general things
     javaVersion = "1.8"
-    programVersion = "0.0.9-SNAPSHOT"
+    programVersion = "0.0.10-SNAPSHOT"
 
     //dependency things
     junitVersion = "4.12"
     lombokVersion = "1.16.20"
     leveldbVersion = "0.11.1-SNAPSHOT"
-    porklibVersion = "0.5.4-SNAPSHOT"
+    porklibVersion = "0.5.5-SNAPSHOT"
 }
 
 group "net.daporkchop"
@@ -45,7 +45,6 @@ tasks.withType(JavaCompile) {
 }
 
 repositories {
-    mavenLocal()
     maven {
         name = "DaPorkchop_"
         url = "https://maven.daporkchop.net/"
@@ -87,6 +86,17 @@ publishing {
 
                 name = "NukkitX"
                 url = url = version.endsWith('SNAPSHOT') ? "https://repo.nukkitx.com/snapshot" : "https://repo.nukkitx.com/release"
+            }
+        }
+        if (project.hasProperty("daporkchopMavenUsername") && project.hasProperty("daporkchopMavenPassword")) {
+            maven {
+                credentials {
+                    username = "$daporkchopMavenUsername"
+                    password = "$daporkchopMavenPassword"
+                }
+
+                name = "DaPorkchop_"
+                url = version.endsWith("SNAPSHOT") ? "https://maven.daporkchop.net/snapshot/" : "https://maven.daporkchop.net/release/"
             }
         }
     }
