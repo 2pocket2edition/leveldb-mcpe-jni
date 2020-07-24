@@ -31,6 +31,7 @@ ext {
     lombokVersion = "1.16.20"
     leveldbVersion = "0.11.1-SNAPSHOT"
     porklibVersion = "0.5.5-SNAPSHOT"
+    snappyVersion = "0.4"
 }
 
 group "net.daporkchop"
@@ -57,12 +58,13 @@ repositories {
 }
 
 dependencies {
-    compile "net.daporkchop.lib:natives:$porklibVersion"
+    compile "net.daporkchop.lib:natives:$porklibVersion" //porklib:natives for loading of native libs and java fallback
 
-    compile "org.iq80.leveldb:leveldb:$leveldbVersion"
+    compile "org.iq80.leveldb:leveldb:$leveldbVersion" //base java leveldb api
+
+    compile "org.iq80.snappy:snappy:$snappyVersion" //snappy in java (needed for platforms without natives support)
 
     testCompile "net.daporkchop.lib:encoding:$porklibVersion"
-
     testCompile "junit:junit:$junitVersion"
 
     compileOnly "org.projectlombok:lombok:$lombokVersion"

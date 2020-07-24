@@ -1,5 +1,6 @@
 #include "ldb-jni_common.h"
-#include "NativeWriteBatch.h"
+
+extern "C" {
 
 JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeWriteBatch_put0
   (JNIEnv* env, jobject obj, jlong ptr, jbyteArray key, jbyteArray value)  {
@@ -55,4 +56,6 @@ JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeWriteBatch_delet
     leveldb::Slice keySlice(keyPtr, keyLength);
 
     env->ReleasePrimitiveArrayCritical(key, keyPtr, 0);
+}
+
 }

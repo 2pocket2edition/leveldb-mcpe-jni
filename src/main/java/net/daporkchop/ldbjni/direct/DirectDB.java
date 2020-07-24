@@ -32,9 +32,6 @@ import org.iq80.leveldb.WriteBatch;
 import org.iq80.leveldb.WriteOptions;
 
 import java.io.IOException;
-import java.util.Map;
-import java.util.Spliterator;
-import java.util.function.Consumer;
 
 /**
  * Extension of {@link DB} which allows use of direct buffers instead of {@code byte[]}s.
@@ -47,7 +44,7 @@ public interface DirectDB extends DB {
 
     ByteBuf get(@NonNull ByteBuf key) throws DBException;
 
-    default ByteBuf getZeroCopy(@NonNull ByteBuf key) throws IOException    {
+    default ByteBuf getZeroCopy(@NonNull ByteBuf key) throws DBException    {
         return this.get(key);
     }
 
@@ -56,7 +53,11 @@ public interface DirectDB extends DB {
 
     ByteBuf get(@NonNull ByteBuf key, @NonNull ReadOptions options) throws DBException;
 
-    default ByteBuf getZeroCopy(@NonNull ByteBuf key, @NonNull ReadOptions options) throws IOException  {
+    void getInto(@NonNull ByteBuf key, @NonNull ByteBuf dst) throws DBException;
+
+    void getInto(@NonNull ByteBuf key, @NonNull ByteBuf dst, @NonNull ReadOptions options) throws DBException;
+
+    default ByteBuf getZeroCopy(@NonNull ByteBuf key, @NonNull ReadOptions options) throws DBException  {
         return this.get(key, options);
     }
 
@@ -90,10 +91,10 @@ public interface DirectDB extends DB {
     WriteBatch createWriteBatch();
 
     @Override
-    void write(@NonNull WriteBatch updates) throws DBException;
+    void write(@NonNull WriteBatch writeBatch) throws DBException;
 
     @Override
-    Snapshot write(@NonNull WriteBatch updates, @NonNull WriteOptions options) throws DBException;
+    Snapshot write(@NonNull WriteBatch writeBatch, @NonNull WriteOptions options) throws DBException;
 
     @Override
     long[] getApproximateSizes(@NonNull Range... ranges);

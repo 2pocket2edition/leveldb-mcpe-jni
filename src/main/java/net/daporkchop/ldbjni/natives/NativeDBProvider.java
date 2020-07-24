@@ -20,7 +20,9 @@
 
 package net.daporkchop.ldbjni.natives;
 
+import lombok.NonNull;
 import net.daporkchop.ldbjni.DBProvider;
+import net.daporkchop.ldbjni.direct.DirectDB;
 import net.daporkchop.lib.common.misc.file.PFiles;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.Options;
@@ -49,7 +51,7 @@ final class NativeDBProvider implements DBProvider {
     }
 
     @Override
-    public DB open(File file, Options options) throws IOException {
+    public DirectDB open(@NonNull File file, Options options) throws IOException {
         if (PFiles.checkDirectoryExists(file) && PFiles.checkFileExists(new File(file, "CURRENT")))  {
             //database has already been created
             File fixedFile = new File(file, "FIXED_MANIFEST");
@@ -65,7 +67,7 @@ final class NativeDBProvider implements DBProvider {
     }
 
     @Override
-    public void destroy(File file, Options options) throws IOException {
+    public void destroy(@NonNull File file, Options options) throws IOException {
         destroy0(
                 file.getAbsoluteFile().getAbsolutePath(),
                 options.createIfMissing(),
@@ -81,7 +83,7 @@ final class NativeDBProvider implements DBProvider {
     }
 
     @Override
-    public void repair(File file, Options options) throws IOException {
+    public void repair(@NonNull File file, Options options) throws IOException {
         repair0(
                 file.getAbsoluteFile().getAbsolutePath(),
                 options.createIfMissing(),

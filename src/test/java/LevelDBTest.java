@@ -18,14 +18,22 @@
  *
  */
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.Unpooled;
 import lombok.NonNull;
 import net.daporkchop.ldbjni.LevelDB;
+import net.daporkchop.ldbjni.direct.BufType;
+import net.daporkchop.ldbjni.direct.DirectDB;
+import net.daporkchop.ldbjni.direct.DirectReadOptions;
 import net.daporkchop.lib.common.function.io.IOConsumer;
+import net.daporkchop.lib.common.misc.Tuple;
 import net.daporkchop.lib.common.misc.file.PFiles;
 import net.daporkchop.lib.encoding.ToBytes;
 import org.iq80.leveldb.CompressionType;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.Options;
+import org.iq80.leveldb.ReadOptions;
 import org.iq80.leveldb.WriteBatch;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -36,6 +44,8 @@ import java.io.IOException;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
 
+import static net.daporkchop.lib.common.util.PValidation.*;
+
 /**
  * @author DaPorkchop_
  */
@@ -43,14 +53,14 @@ public class LevelDBTest {
     public static final File TEST_ROOT = new File("test_out");
 
     @BeforeClass
-    public static void ensureNative()  {
+    public static void ensureNative() {
         if (!LevelDB.PROVIDER.isNative()) {
             throw new IllegalStateException("Not using native LevelDB!");
         }
     }
 
     @Before
-    public void nukeTestDir()   {
+    public void nukeTestDir() {
         if (PFiles.checkDirectoryExists(TEST_ROOT)) {
             System.out.println("Nuking " + TEST_ROOT);
             PFiles.rmContentsParallel(TEST_ROOT);
@@ -80,7 +90,7 @@ public class LevelDBTest {
     }
 
     @Test
-    public void testManyReads() throws IOException  {
+    public void testManyReads() throws IOException {
         this.doTest(db -> {
             //write a single large entry
             db.put(ToBytes.toBytes(0), new byte[1 << 20]);
@@ -91,7 +101,7 @@ public class LevelDBTest {
             //get it a bunch of times to see if the byte[]s are actually being GC-d
             IntStream.range(0, 10000 * 2).parallel()
                     .peek(i -> {
-                        if ((i & 511) == 0)    {
+                        if ((i & 511) == 0) {
                             System.gc();
                         }
                     })
@@ -99,9 +109,92 @@ public class LevelDBTest {
         }, CompressionType.SNAPPY);
     }
 
-    private void doTest(@NonNull IOConsumer<DB> code, @NonNull CompressionType compression) throws IOException  {
+    @Test
+    public void testDirectRead() throws IOException {
+        this.doTest(db -> {
+            //write a single large entry
+            byte[] arr0 = new byte[1 << 20 >> 3];
+            ThreadLocalRandom.current().nextBytes(arr0);
+            byte[] arr1 = new byte[arr0.length];
+            db.put(ToBytes.toBytes(0), arr0);
+            db.put(ToBytes.toBytes(1), arr1);
+
+            //compact it
+            db.compactRange(null, null);
+
+            { //sanity checks
+                ByteBuf buf = ((DirectDB) db).get(Unpooled.wrappedBuffer(ToBytes.toBytes(0)));
+                try {
+                    System.out.println(buf);
+                    this.checkIdentical(arr0, buf);
+                } finally {
+                    buf.release();
+                }
+                buf = ((DirectDB) db).get(Unpooled.wrappedBuffer(ToBytes.toBytes(1)));
+                try {
+                    System.out.println(buf);
+                    this.checkIdentical(arr1, buf);
+                } finally {
+                    buf.release();
+                }
+
+                buf = ((DirectDB) db).get(Unpooled.directBuffer().writeBytes(ToBytes.toBytes(0)),
+                        new DirectReadOptions().alloc(PooledByteBufAllocator.DEFAULT).type(BufType.HEAP));
+                try {
+                    System.out.println(buf);
+                    this.checkIdentical(arr0, buf);
+                } finally {
+                    buf.release();
+                }
+                buf = ((DirectDB) db).get(Unpooled.directBuffer().writeBytes(ToBytes.toBytes(1)),
+                        new DirectReadOptions().alloc(PooledByteBufAllocator.DEFAULT).type(BufType.HEAP));
+                try {
+                    System.out.println(buf);
+                    this.checkIdentical(arr1, buf);
+                } finally {
+                    buf.release();
+                }
+            }
+
+            { //get it a bunch of times to check for memory leaks
+                ByteBuf key0 = Unpooled.directBuffer().writeBytes(ToBytes.toBytes(0));
+                ByteBuf key1 = Unpooled.directBuffer().writeBytes(ToBytes.toBytes(1));
+                System.out.println("get");
+                IntStream.range(0, 10000).parallel()
+                        .mapToObj(i -> new Tuple<>(((DirectDB) db).get(key0), ((DirectDB) db).get(key1)))
+                        .peek(t -> this.checkIdentical(arr0, t.getA()))
+                        .peek(t -> this.checkIdentical(arr1, t.getB()))
+                        .forEach(t -> {
+                            t.getA().release();
+                            t.getB().release();
+                        });
+
+                System.out.println("getInto");
+                ThreadLocal<Tuple<ByteBuf, ByteBuf>> tl = ThreadLocal.withInitial(() ->
+                        new Tuple<>(Unpooled.directBuffer(arr0.length, arr0.length), Unpooled.directBuffer(arr1.length, arr1.length)));
+                IntStream.range(0, 10000).parallel()
+                        .mapToObj(i -> tl.get())
+                        .peek(t -> ((DirectDB) db).getInto(key0, t.getA().clear()))
+                        .peek(t -> ((DirectDB) db).getInto(key1, t.getB().clear()))
+                        .peek(t -> this.checkIdentical(arr0, t.getA()))
+                        .forEach(t -> this.checkIdentical(arr1, t.getB()));
+
+                System.out.println("getZeroCopy");
+                IntStream.range(0, 10000).parallel()
+                        .mapToObj(i -> new Tuple<>(((DirectDB) db).getZeroCopy(key0), ((DirectDB) db).getZeroCopy(key1)))
+                        .peek(t -> this.checkIdentical(arr0, t.getA()))
+                        .peek(t -> this.checkIdentical(arr1, t.getB()))
+                        .forEach(t -> {
+                            t.getA().release();
+                            t.getB().release();
+                        });
+            }
+        }, CompressionType.NONE);
+    }
+
+    private void doTest(@NonNull IOConsumer<DB> code, @NonNull CompressionType compression) throws IOException {
         System.out.printf("Opening DB with compression: %s...\n", compression);
-        try (DB db = LevelDB.PROVIDER.open(TEST_ROOT, new Options().compressionType(compression)))   {
+        try (DB db = LevelDB.PROVIDER.open(TEST_ROOT, new Options().compressionType(compression))) {
             System.out.println("Opened DB!");
 
             code.acceptThrowing(db);
@@ -109,5 +202,11 @@ public class LevelDBTest {
             System.out.println("Closing DB...");
         }
         System.out.println("Closed DB!");
+    }
+
+    private void checkIdentical(@NonNull byte[] arr, @NonNull ByteBuf buf) {
+        for (int i = 0; i < arr.length; i++) {
+            checkState(arr[i] == buf.getByte(i), i);
+        }
     }
 }

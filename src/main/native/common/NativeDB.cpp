@@ -1,13 +1,22 @@
 #include "ldb-jni_common.h"
-#include "NativeDB.h"
 
 static jfieldID dbID;
 static jfieldID dcaID;
+
+static jmethodID get0_finalID;
+static jmethodID getInto0_finalID;
+static jmethodID getZeroCopy0_finalID;
+
+extern "C" {
 
 JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_init
   (JNIEnv* env, jclass cla)  {
     dbID  = env->GetFieldID(cla, "db", "J");
     dcaID = env->GetFieldID(cla, "dca", "J");
+
+    get0_finalID         = env->GetMethodID(cla, "get0_final", "(JILio/netty/buffer/ByteBufAllocator;Lnet/daporkchop/ldbjni/direct/BufType;)Lio/netty/buffer/ByteBuf;");
+    getInto0_finalID     = env->GetMethodID(cla, "getInto0_final", "(JILio/netty/buffer/ByteBuf;)V");
+    getZeroCopy0_finalID = env->GetMethodID(cla, "getZeroCopy0_final", "(JIJ)Lio/netty/buffer/ByteBuf;");
 }
 
 JNIEXPORT jlong JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_openDb
@@ -39,6 +48,11 @@ JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_closeDb
   (JNIEnv* env, jclass cla, jlong db, jlong dca)  {
     delete (leveldb::DB*) db;
     delete (leveldb::DecompressAllocator*) dca;
+}
+
+JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_deleteString
+  (JNIEnv* env, jclass cla, jlong strAddr)  {
+    delete (std::string*) strAddr;
 }
 
 JNIEXPORT jbyteArray JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_get0
@@ -176,4 +190,161 @@ JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_compactRange0
     if (limit != nullptr)   {
         delete limitRaw;
     }
+}
+
+JNIEXPORT jobject JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_get0H
+  (JNIEnv* env, jobject obj, jbyteArray key, jint keyOff, jint keyLen, jboolean verifyChecksums, jboolean fillCache, jlong snapshot, jobject alloc, jobject type)  {
+    auto db = (leveldb::DB*) env->GetLongField(obj, dbID);
+
+    leveldb::ReadOptions readOptions;
+    readOptions.verify_checksums = verifyChecksums;
+    readOptions.fill_cache = fillCache;
+    readOptions.snapshot = (leveldb::Snapshot*) snapshot;
+    readOptions.decompress_allocator = (leveldb::DecompressAllocator*) env->GetLongField(obj, dcaID);
+
+    auto keyPtr = (char*) env->GetPrimitiveArrayCritical(key, nullptr);
+    if (!keyPtr)    {
+        throwISE(env, "Unable to pin key array");
+        return nullptr;
+    }
+    leveldb::Slice keySlice(&keyPtr[keyOff], keyLen);
+
+    std::string value;
+    leveldb::Status status = db->Get(readOptions, keySlice, &value);
+
+    env->ReleasePrimitiveArrayCritical(key, keyPtr, 0);
+
+    if (status.IsNotFound() || checkException(env, status))    {
+        return (jobject) nullptr;
+    }
+
+    return env->CallObjectMethod(obj, get0_finalID, (jlong) value.data(), value.size(), alloc, type);
+}
+
+JNIEXPORT jobject JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_get0D
+  (JNIEnv* env, jobject obj, jlong keyAddr, jint keyLen, jboolean verifyChecksums, jboolean fillCache, jlong snapshot, jobject alloc, jobject type)  {
+    auto db = (leveldb::DB*) env->GetLongField(obj, dbID);
+
+    leveldb::ReadOptions readOptions;
+    readOptions.verify_checksums = verifyChecksums;
+    readOptions.fill_cache = fillCache;
+    readOptions.snapshot = (leveldb::Snapshot*) snapshot;
+    readOptions.decompress_allocator = (leveldb::DecompressAllocator*) env->GetLongField(obj, dcaID);
+
+    leveldb::Slice keySlice((char*) keyAddr, keyLen);
+
+    std::string value;
+    leveldb::Status status = db->Get(readOptions, keySlice, &value);
+
+    if (status.IsNotFound() || checkException(env, status))    {
+        return (jobject) nullptr;
+    }
+
+    return env->CallObjectMethod(obj, get0_finalID, (jlong) value.data(), value.size(), alloc, type);
+}
+
+JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_getInto0H
+  (JNIEnv* env, jobject obj, jbyteArray key, jint keyOff, jint keyLen, jboolean verifyChecksums, jboolean fillCache, jlong snapshot, jobject dst)  {
+    auto db = (leveldb::DB*) env->GetLongField(obj, dbID);
+
+    leveldb::ReadOptions readOptions;
+    readOptions.verify_checksums = verifyChecksums;
+    readOptions.fill_cache = fillCache;
+    readOptions.snapshot = (leveldb::Snapshot*) snapshot;
+    readOptions.decompress_allocator = (leveldb::DecompressAllocator*) env->GetLongField(obj, dcaID);
+
+    auto keyPtr = (char*) env->GetPrimitiveArrayCritical(key, nullptr);
+    if (!keyPtr)    {
+        throwISE(env, "Unable to pin key array");
+        return;
+    }
+    leveldb::Slice keySlice(&keyPtr[keyOff], keyLen);
+
+    std::string value;
+    leveldb::Status status = db->Get(readOptions, keySlice, &value);
+
+    env->ReleasePrimitiveArrayCritical(key, keyPtr, 0);
+
+    if (status.IsNotFound() || checkException(env, status))    {
+        return;
+    }
+
+    env->CallObjectMethod(obj, getInto0_finalID, (jlong) value.data(), value.size(), dst);
+}
+
+JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_getInto0D
+  (JNIEnv* env, jobject obj, jlong keyAddr, jint keyLen, jboolean verifyChecksums, jboolean fillCache, jlong snapshot, jobject dst)  {
+    auto db = (leveldb::DB*) env->GetLongField(obj, dbID);
+
+    leveldb::ReadOptions readOptions;
+    readOptions.verify_checksums = verifyChecksums;
+    readOptions.fill_cache = fillCache;
+    readOptions.snapshot = (leveldb::Snapshot*) snapshot;
+    readOptions.decompress_allocator = (leveldb::DecompressAllocator*) env->GetLongField(obj, dcaID);
+
+    leveldb::Slice keySlice((char*) keyAddr, keyLen);
+
+    std::string value;
+    leveldb::Status status = db->Get(readOptions, keySlice, &value);
+
+    if (status.IsNotFound() || checkException(env, status))    {
+        return;
+    }
+
+    env->CallObjectMethod(obj, getInto0_finalID, (jlong) value.data(), value.size(), dst);
+}
+
+JNIEXPORT jobject JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_getZeroCopy0H
+  (JNIEnv* env, jobject obj, jbyteArray key, jint keyOff, jint keyLen, jboolean verifyChecksums, jboolean fillCache, jlong snapshot)  {
+    auto db = (leveldb::DB*) env->GetLongField(obj, dbID);
+
+    leveldb::ReadOptions readOptions;
+    readOptions.verify_checksums = verifyChecksums;
+    readOptions.fill_cache = fillCache;
+    readOptions.snapshot = (leveldb::Snapshot*) snapshot;
+    readOptions.decompress_allocator = (leveldb::DecompressAllocator*) env->GetLongField(obj, dcaID);
+
+    auto keyPtr = (char*) env->GetPrimitiveArrayCritical(key, nullptr);
+    if (!keyPtr)    {
+        throwISE(env, "Unable to pin key array");
+        return nullptr;
+    }
+    leveldb::Slice keySlice(&keyPtr[keyOff], keyLen);
+
+    std::string* valuePtr = new std::string;
+    leveldb::Status status = db->Get(readOptions, keySlice, valuePtr);
+
+    env->ReleasePrimitiveArrayCritical(key, keyPtr, 0);
+
+    if (status.IsNotFound() || checkException(env, status))    {
+        delete valuePtr;
+        return (jobject) nullptr;
+    }
+
+    return env->CallObjectMethod(obj, getZeroCopy0_finalID, (jlong) valuePtr->data(), valuePtr->size(), (jlong) valuePtr);
+}
+
+JNIEXPORT jobject JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_getZeroCopy0D
+  (JNIEnv* env, jobject obj, jlong keyAddr, jint keyLen, jboolean verifyChecksums, jboolean fillCache, jlong snapshot)  {
+    auto db = (leveldb::DB*) env->GetLongField(obj, dbID);
+
+    leveldb::ReadOptions readOptions;
+    readOptions.verify_checksums = verifyChecksums;
+    readOptions.fill_cache = fillCache;
+    readOptions.snapshot = (leveldb::Snapshot*) snapshot;
+    readOptions.decompress_allocator = (leveldb::DecompressAllocator*) env->GetLongField(obj, dcaID);
+
+    leveldb::Slice keySlice((char*) keyAddr, keyLen);
+
+    std::string* valuePtr = new std::string;
+    leveldb::Status status = db->Get(readOptions, keySlice, valuePtr);
+
+    if (status.IsNotFound() || checkException(env, status))    {
+        delete valuePtr;
+        return (jobject) nullptr;
+    }
+
+    return env->CallObjectMethod(obj, getZeroCopy0_finalID, (jlong) valuePtr->data(), valuePtr->size(), (jlong) valuePtr);
+}
+
 }

@@ -20,38 +20,47 @@
 
 package net.daporkchop.ldbjni.direct;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.experimental.Accessors;
-import org.iq80.leveldb.ReadOptions;
-import org.iq80.leveldb.Snapshot;
+import lombok.NonNull;
 
 /**
+ * The type of buffer that the data was requested to be stored in.
+ *
  * @author DaPorkchop_
  */
-@Getter
-@Setter
-@Accessors(fluent = true, chain = true)
-public class DirectReadOptions extends ReadOptions {
-    protected ByteBufAllocator alloc;
-    protected BufType type;
+public enum BufType {
+    DEFAULT {
+        @Override
+        public ByteBuf allocate(@NonNull ByteBufAllocator alloc, int size) {
+            return alloc.buffer(size);
+        }
+    },
+    IO {
+        @Override
+        public ByteBuf allocate(@NonNull ByteBufAllocator alloc, int size) {
+            return alloc.ioBuffer(size);
+        }
+    },
+    HEAP {
+        @Override
+        public ByteBuf allocate(@NonNull ByteBufAllocator alloc, int size) {
+            return alloc.heapBuffer(size);
+        }
+    },
+    DIRECT {
+        @Override
+        public ByteBuf allocate(@NonNull ByteBufAllocator alloc, int size) {
+            return alloc.directBuffer(size);
+        }
+    };
 
-    @Override
-    public DirectReadOptions snapshot(Snapshot snapshot) {
-        super.snapshot(snapshot);
-        return this;
-    }
-
-    @Override
-    public DirectReadOptions fillCache(boolean fillCache) {
-        super.fillCache(fillCache);
-        return this;
-    }
-
-    @Override
-    public DirectReadOptions verifyChecksums(boolean verifyChecksums) {
-        super.verifyChecksums(verifyChecksums);
-        return this;
-    }
+    /**
+     * Allocates a new {@link ByteBuf} with the given size.
+     *
+     * @param alloc the {@link ByteBufAllocator} to use
+     * @param size  the size of the buffer to allocate
+     * @return the allocated {@link ByteBuf}
+     */
+    public abstract ByteBuf allocate(@NonNull ByteBufAllocator alloc, int size);
 }

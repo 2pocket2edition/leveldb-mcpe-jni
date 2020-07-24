@@ -71,6 +71,16 @@ final class JavaDirectDBWrapper implements DirectDB {
     }
 
     @Override
+    public void getInto(@NonNull ByteBuf key, @NonNull ByteBuf dst) throws DBException {
+        dst.writeBytes(this.get(key));
+    }
+
+    @Override
+    public void getInto(@NonNull ByteBuf key, @NonNull ByteBuf dst, @NonNull ReadOptions options) throws DBException {
+        dst.writeBytes(this.get(key, options));
+    }
+
+    @Override
     public void put(@NonNull byte[] key, @NonNull byte[] value) throws DBException {
         this.delegate.put(key, value);
     }
@@ -126,13 +136,13 @@ final class JavaDirectDBWrapper implements DirectDB {
     }
 
     @Override
-    public void write(@NonNull WriteBatch updates) throws DBException {
-        this.delegate.write(updates);
+    public void write(@NonNull WriteBatch writeBatch) throws DBException {
+        this.delegate.write(writeBatch);
     }
 
     @Override
-    public Snapshot write(@NonNull WriteBatch updates, @NonNull WriteOptions options) throws DBException {
-        return this.delegate.write(updates, options);
+    public Snapshot write(@NonNull WriteBatch writeBatch, @NonNull WriteOptions options) throws DBException {
+        return this.delegate.write(writeBatch, options);
     }
 
     @Override

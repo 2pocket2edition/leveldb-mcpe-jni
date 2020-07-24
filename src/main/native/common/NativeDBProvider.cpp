@@ -1,5 +1,6 @@
 #include "ldb-jni_common.h"
-#include "NativeDBProvider.h"
+
+extern "C" {
 
 JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDBProvider_destroy0
   (JNIEnv* env, jclass cla, jstring name,
@@ -27,4 +28,6 @@ JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDBProvider_repai
     env->ReleaseStringUTFChars(name, name_native);
 
     checkException(env, status);
+}
+
 }
