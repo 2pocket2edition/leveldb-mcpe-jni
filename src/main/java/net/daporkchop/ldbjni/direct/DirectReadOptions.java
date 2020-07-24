@@ -18,33 +18,39 @@
  *
  */
 
-package net.daporkchop.ldbjni;
+package net.daporkchop.ldbjni.direct;
 
-import lombok.NonNull;
-import net.daporkchop.ldbjni.direct.DirectDB;
-import net.daporkchop.lib.natives.Feature;
-import org.iq80.leveldb.DB;
-import org.iq80.leveldb.DBFactory;
-import org.iq80.leveldb.Options;
-
-import java.io.File;
-import java.io.IOException;
+import io.netty.buffer.ByteBufAllocator;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+import org.iq80.leveldb.ReadOptions;
+import org.iq80.leveldb.Snapshot;
 
 /**
- * A {@link Feature} that provides an implementation of {@link DBFactory}.
- *
  * @author DaPorkchop_
  */
-public interface DBProvider extends Feature<DBProvider>, DBFactory {
-    @Override
-    boolean isNative();
+@Getter
+@Setter
+@Accessors(fluent = true, chain = true)
+public class DirectReadOptions extends ReadOptions {
+    protected ByteBufAllocator alloc;
 
     @Override
-    DirectDB open(@NonNull File path, Options options) throws IOException;
+    public DirectReadOptions snapshot(Snapshot snapshot) {
+        super.snapshot(snapshot);
+        return this;
+    }
 
     @Override
-    void destroy(@NonNull File path, Options options) throws IOException;
+    public DirectReadOptions fillCache(boolean fillCache) {
+        super.fillCache(fillCache);
+        return this;
+    }
 
     @Override
-    void repair(@NonNull File path, Options options) throws IOException;
+    public DirectReadOptions verifyChecksums(boolean verifyChecksums) {
+        super.verifyChecksums(verifyChecksums);
+        return this;
+    }
 }

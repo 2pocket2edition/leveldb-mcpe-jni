@@ -20,9 +20,10 @@
 
 package net.daporkchop.ldbjni.java;
 
+import lombok.NonNull;
 import net.daporkchop.ldbjni.DBProvider;
+import net.daporkchop.ldbjni.direct.DirectDB;
 import net.daporkchop.lib.common.misc.file.PFiles;
-import org.iq80.leveldb.DB;
 import org.iq80.leveldb.Options;
 import org.iq80.leveldb.impl.Iq80DBFactory;
 
@@ -41,7 +42,7 @@ final class JavaDBProvider implements DBProvider {
     }
 
     @Override
-    public DB open(File file, Options options) throws IOException {
+    public DirectDB open(@NonNull File file, Options options) throws IOException {
         if (PFiles.checkDirectoryExists(file) && PFiles.checkFileExists(new File(file, "CURRENT"))) {
             //database has already been created
             File fixedFile = new File(file, "FIXED_MANIFEST");
@@ -52,16 +53,16 @@ final class JavaDBProvider implements DBProvider {
                 PFiles.rm(fixedFile);
             }
         }
-        return Iq80DBFactory.factory.open(file, options);
+        return new JavaDirectDBWrapper(Iq80DBFactory.factory.open(file, options));
     }
 
     @Override
-    public void destroy(File file, Options options) throws IOException {
+    public void destroy(@NonNull File file, Options options) throws IOException {
         Iq80DBFactory.factory.destroy(file, options);
     }
 
     @Override
-    public void repair(File file, Options options) throws IOException {
+    public void repair(@NonNull File file, Options options) throws IOException {
         Iq80DBFactory.factory.repair(file, options);
     }
 }
