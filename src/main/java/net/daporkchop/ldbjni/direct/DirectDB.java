@@ -88,7 +88,7 @@ public interface DirectDB extends DB {
     DBIterator iterator(@NonNull ReadOptions options);
 
     @Override
-    WriteBatch createWriteBatch();
+    DirectWriteBatch createWriteBatch();
 
     @Override
     void write(@NonNull WriteBatch writeBatch) throws DBException;

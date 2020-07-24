@@ -87,48 +87,6 @@ JNIEXPORT jbyteArray JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_get0
     return out;
 }
 
-JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_put0
-  (JNIEnv* env, jobject obj, jbyteArray key, jbyteArray value, jboolean sync)  {
-    auto db = (leveldb::DB*) env->GetLongField(obj, dbID);
-
-    leveldb::WriteOptions writeOptions;
-    writeOptions.sync = sync;
-
-    int keyLength = env->GetArrayLength(key);
-    char* keyRaw = new char[keyLength];
-    env->GetByteArrayRegion(key, 0, keyLength, (jbyte*) keyRaw);
-    leveldb::Slice keySlice(keyRaw, keyLength);
-
-    int valueLength = env->GetArrayLength(value);
-    char* valueRaw = new char[valueLength];
-    env->GetByteArrayRegion(value, 0, valueLength, (jbyte*) valueRaw);
-    leveldb::Slice valueSlice(valueRaw, valueLength);
-
-    leveldb::Status status = db->Put(writeOptions, keySlice, valueSlice);
-    delete keyRaw;
-    delete valueRaw;
-
-    checkException(env, status);
-}
-
-JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_delete0
-  (JNIEnv* env, jobject obj, jbyteArray key, jboolean sync)  {
-    auto db = (leveldb::DB*) env->GetLongField(obj, dbID);
-
-    leveldb::WriteOptions writeOptions;
-    writeOptions.sync = sync;
-
-    int keyLength = env->GetArrayLength(key);
-    char* keyRaw = new char[keyLength];
-    env->GetByteArrayRegion(key, 0, keyLength, (jbyte*) keyRaw);
-    leveldb::Slice keySlice(keyRaw, keyLength);
-
-    leveldb::Status status = db->Delete(writeOptions, keySlice);
-    delete keyRaw;
-
-    checkException(env, status);
-}
-
 JNIEXPORT jlong JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_createWriteBatch0
   (JNIEnv* env, jobject obj)  {
     return (jlong) new leveldb::WriteBatch();
@@ -345,6 +303,134 @@ JNIEXPORT jobject JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_getZeroCop
     }
 
     return env->CallObjectMethod(obj, getZeroCopy0_finalID, (jlong) valuePtr->data(), valuePtr->size(), (jlong) valuePtr);
+}
+
+JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_put0HH
+  (JNIEnv* env, jobject obj, jbyteArray key, jint keyOff, jint keyLen, jbyteArray value, jint valueOff, jint valueLen, jboolean sync)  {
+    auto db = (leveldb::DB*) env->GetLongField(obj, dbID);
+
+    leveldb::WriteOptions writeOptions;
+    writeOptions.sync = sync;
+
+    auto keyPtr = (char*) env->GetPrimitiveArrayCritical(key, nullptr);
+    if (!keyPtr)    {
+        throwException(env, "Unable to pin key array");
+        return;
+    }
+
+    auto valuePtr = (char*) env->GetPrimitiveArrayCritical(value, nullptr);
+    if (!valuePtr)    {
+        env->ReleasePrimitiveArrayCritical(key, keyPtr, 0);
+        throwException(env, "Unable to pin value array");
+        return;
+    }
+
+    leveldb::Slice keySlice(&keyPtr[keyOff], keyLen);
+    leveldb::Slice valueSlice(&valuePtr[valueOff], valueLen);
+
+    leveldb::Status status = db->Put(writeOptions, keySlice, valueSlice);
+
+    env->ReleasePrimitiveArrayCritical(value, valuePtr, 0);
+    env->ReleasePrimitiveArrayCritical(key, keyPtr, 0);
+
+    checkException(env, status);
+}
+
+JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_put0HD
+  (JNIEnv* env, jobject obj, jbyteArray key, jint keyOff, jint keyLen, jlong valueAddr, jint valueLen, jboolean sync)  {
+    auto db = (leveldb::DB*) env->GetLongField(obj, dbID);
+
+    leveldb::WriteOptions writeOptions;
+    writeOptions.sync = sync;
+
+    auto keyPtr = (char*) env->GetPrimitiveArrayCritical(key, nullptr);
+    if (!keyPtr)    {
+        throwException(env, "Unable to pin key array");
+        return;
+    }
+
+    leveldb::Slice keySlice(&keyPtr[keyOff], keyLen);
+    leveldb::Slice valueSlice((char*) valueAddr, valueLen);
+
+    leveldb::Status status = db->Put(writeOptions, keySlice, valueSlice);
+
+    env->ReleasePrimitiveArrayCritical(key, keyPtr, 0);
+
+    checkException(env, status);
+}
+
+JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_put0DH
+  (JNIEnv* env, jobject obj, jlong keyAddr, jint keyLen, jbyteArray value, jint valueOff, jint valueLen, jboolean sync)  {
+    auto db = (leveldb::DB*) env->GetLongField(obj, dbID);
+
+    leveldb::WriteOptions writeOptions;
+    writeOptions.sync = sync;
+
+    auto valuePtr = (char*) env->GetPrimitiveArrayCritical(value, nullptr);
+    if (!valuePtr)    {
+        throwException(env, "Unable to pin value array");
+        return;
+    }
+
+    leveldb::Slice keySlice((char*) keyAddr, keyLen);
+    leveldb::Slice valueSlice(&valuePtr[valueOff], valueLen);
+
+    leveldb::Status status = db->Put(writeOptions, keySlice, valueSlice);
+
+    env->ReleasePrimitiveArrayCritical(value, valuePtr, 0);
+
+    checkException(env, status);
+}
+
+JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_put0DD
+  (JNIEnv* env, jobject obj, jlong keyAddr, jint keyLen, jlong valueAddr, jint valueLen, jboolean sync)  {
+    auto db = (leveldb::DB*) env->GetLongField(obj, dbID);
+
+    leveldb::WriteOptions writeOptions;
+    writeOptions.sync = sync;
+
+    leveldb::Slice keySlice((char*) keyAddr, keyLen);
+    leveldb::Slice valueSlice((char*) valueAddr, valueLen);
+
+    leveldb::Status status = db->Put(writeOptions, keySlice, valueSlice);
+
+    checkException(env, status);
+}
+
+JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_delete0H
+  (JNIEnv* env, jobject obj, jbyteArray key, jint keyOff, jint keyLen, jboolean sync)  {
+    auto db = (leveldb::DB*) env->GetLongField(obj, dbID);
+
+    leveldb::WriteOptions writeOptions;
+    writeOptions.sync = sync;
+
+    auto keyPtr = (char*) env->GetPrimitiveArrayCritical(key, nullptr);
+    if (!keyPtr)    {
+        throwException(env, "Unable to pin key array");
+        return;
+    }
+
+    leveldb::Slice keySlice(&keyPtr[keyOff], keyLen);
+
+    leveldb::Status status = db->Delete(writeOptions, keySlice);
+
+    env->ReleasePrimitiveArrayCritical(key, keyPtr, 0);
+
+    checkException(env, status);
+}
+
+JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_delete0D
+  (JNIEnv* env, jobject obj, jlong keyAddr, jint keyLen, jboolean sync)  {
+    auto db = (leveldb::DB*) env->GetLongField(obj, dbID);
+
+    leveldb::WriteOptions writeOptions;
+    writeOptions.sync = sync;
+
+    leveldb::Slice keySlice((char*) keyAddr, keyLen);
+
+    leveldb::Status status = db->Delete(writeOptions, keySlice);
+
+    checkException(env, status);
 }
 
 }

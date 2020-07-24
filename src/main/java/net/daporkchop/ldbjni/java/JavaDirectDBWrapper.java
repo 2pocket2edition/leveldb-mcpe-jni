@@ -25,6 +25,7 @@ import io.netty.buffer.Unpooled;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import net.daporkchop.ldbjni.direct.DirectDB;
+import net.daporkchop.ldbjni.direct.DirectWriteBatch;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.DBException;
 import org.iq80.leveldb.DBIterator;
@@ -41,7 +42,7 @@ import java.io.IOException;
  */
 @RequiredArgsConstructor
 final class JavaDirectDBWrapper implements DirectDB {
-    private static byte[] toArray(@NonNull ByteBuf buf) {
+    static byte[] toArray(@NonNull ByteBuf buf) {
         byte[] arr = new byte[buf.readableBytes()];
         buf.getBytes(buf.readerIndex(), arr);
         return arr;
@@ -131,18 +132,18 @@ final class JavaDirectDBWrapper implements DirectDB {
     }
 
     @Override
-    public WriteBatch createWriteBatch() {
-        return this.delegate.createWriteBatch();
+    public DirectWriteBatch createWriteBatch() {
+        return new JavaDirectWriteBatchWrapper(this.delegate.createWriteBatch());
     }
 
     @Override
     public void write(@NonNull WriteBatch writeBatch) throws DBException {
-        this.delegate.write(writeBatch);
+        this.delegate.write(writeBatch instanceof JavaDirectWriteBatchWrapper ? ((JavaDirectWriteBatchWrapper) writeBatch).delegate : writeBatch);
     }
 
     @Override
     public Snapshot write(@NonNull WriteBatch writeBatch, @NonNull WriteOptions options) throws DBException {
-        return this.delegate.write(writeBatch, options);
+        return this.delegate.write(writeBatch instanceof JavaDirectWriteBatchWrapper ? ((JavaDirectWriteBatchWrapper) writeBatch).delegate : writeBatch, options);
     }
 
     @Override

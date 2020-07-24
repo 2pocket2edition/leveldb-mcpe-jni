@@ -188,6 +188,9 @@ public class LevelDBTest {
                             t.getA().release();
                             t.getB().release();
                         });
+
+                key0.release();
+                key1.release();
             }
         }, CompressionType.NONE);
     }

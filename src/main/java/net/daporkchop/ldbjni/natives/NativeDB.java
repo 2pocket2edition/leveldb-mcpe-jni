@@ -31,9 +31,9 @@ import lombok.RequiredArgsConstructor;
 import net.daporkchop.ldbjni.direct.BufType;
 import net.daporkchop.ldbjni.direct.DirectDB;
 import net.daporkchop.ldbjni.direct.DirectReadOptions;
+import net.daporkchop.ldbjni.direct.DirectWriteBatch;
 import net.daporkchop.lib.unsafe.PCleaner;
 import net.daporkchop.lib.unsafe.PUnsafe;
-import net.daporkchop.lib.unsafe.cleaner.SunCleaner;
 import org.iq80.leveldb.DBException;
 import org.iq80.leveldb.DBIterator;
 import org.iq80.leveldb.Options;
@@ -144,14 +144,12 @@ final class NativeDB implements DirectDB {
         this.readLock.lock();
         try {
             this.assertOpen();
-            this.put0(key, value, options.sync());
+            this.put0HH(key, 0, key.length, value, 0, value.length, options.sync());
             return null;
         } finally {
             this.readLock.unlock();
         }
     }
-
-    private native void put0(byte[] key, byte[] value, boolean sync);
 
     @Override
     public void delete(@NonNull byte[] key) throws DBException {
@@ -167,17 +165,15 @@ final class NativeDB implements DirectDB {
         this.readLock.lock();
         try {
             this.assertOpen();
-            this.delete0(key, options.sync());
+            this.delete0H(key, 0, key.length, options.sync());
             return null;
         } finally {
             this.readLock.unlock();
         }
     }
 
-    private native void delete0(byte[] key, boolean sync);
-
     @Override
-    public WriteBatch createWriteBatch() {
+    public DirectWriteBatch createWriteBatch() {
         return new NativeWriteBatch(this.createWriteBatch0(), this);
     }
 
@@ -303,7 +299,7 @@ final class NativeDB implements DirectDB {
             this.assertOpen(); //TODO: snapshot
             if (key.hasArray()) {
                 return this.get0H(
-                        key.array(), key.readerIndex(), key.readableBytes(),
+                        key.array(), key.arrayOffset() + key.readerIndex(), key.readableBytes(),
                         options.verifyChecksums(), options.fillCache(), 0L, this.selectAlloc(options), this.selectType(options));
             } else if (key.hasMemoryAddress()) {
                 return this.get0D(
@@ -344,7 +340,7 @@ final class NativeDB implements DirectDB {
             this.assertOpen(); //TODO: snapshot
             if (key.hasArray()) {
                 this.getInto0H(
-                        key.array(), key.readerIndex(), key.readableBytes(),
+                        key.array(), key.arrayOffset() + key.readerIndex(), key.readableBytes(),
                         options.verifyChecksums(), options.fillCache(), 0L, dst);
             } else if (key.hasMemoryAddress()) {
                 this.getInto0D(
@@ -385,7 +381,7 @@ final class NativeDB implements DirectDB {
             this.assertOpen(); //TODO: snapshot
             if (key.hasArray()) {
                 return this.getZeroCopy0H(
-                        key.array(), key.readerIndex(), key.readableBytes(),
+                        key.array(), key.arrayOffset() + key.readerIndex(), key.readableBytes(),
                         options.verifyChecksums(), options.fillCache(), 0L);
             } else if (key.hasMemoryAddress()) {
                 return this.getZeroCopy0D(
@@ -416,21 +412,122 @@ final class NativeDB implements DirectDB {
 
     @Override
     public void put(@NonNull ByteBuf key, @NonNull ByteBuf value) throws DBException {
+        this.put(key, value, DEFAULT_WRITE_OPTIONS);
     }
 
     @Override
     public Snapshot put(@NonNull ByteBuf key, @NonNull ByteBuf value, @NonNull WriteOptions options) throws DBException {
-        return null;
+        if (options.snapshot()) {
+            throw new UnsupportedOperationException("snapshot");
+        }
+
+        this.readLock.lock();
+        try {
+            this.assertOpen();
+            if (key.hasArray()) {
+                if (value.hasArray()) {
+                    this.put0HH(
+                            key.array(), key.arrayOffset() + key.readerIndex(), key.readableBytes(),
+                            value.array(), value.arrayOffset() + value.readerIndex(), value.readableBytes(),
+                            options.sync());
+                    return null;
+                } else if (value.hasMemoryAddress()) {
+                    this.put0HD(
+                            key.array(), key.arrayOffset() + key.readerIndex(), key.readableBytes(),
+                            value.memoryAddress() + value.readerIndex(), value.readableBytes(),
+                            options.sync());
+                    return null;
+                }
+            } else if (value.hasMemoryAddress())    {
+                if (value.hasArray()) {
+                    this.put0DH(
+                            key.memoryAddress() + key.readerIndex(), key.readableBytes(),
+                            value.array(), value.arrayOffset() + value.readerIndex(), value.readableBytes(),
+                            options.sync());
+                    return null;
+                } else if (value.hasMemoryAddress()) {
+                    this.put0DD(
+                            key.memoryAddress() + key.readerIndex(), key.readableBytes(),
+                            value.memoryAddress() + value.readerIndex(), value.readableBytes(),
+                            options.sync());
+                    return null;
+                }
+            }
+            if (!key.hasArray() && !key.hasMemoryAddress()) {
+                ByteBuf keyCopy = UnpooledByteBufAllocator.DEFAULT.buffer(key.readableBytes(), key.readableBytes());
+                try {
+                    checkState(keyCopy.hasArray() || keyCopy.hasMemoryAddress(), keyCopy);
+                    key.getBytes(key.readerIndex(), keyCopy);
+                    return this.put(keyCopy, value, options);
+                } finally {
+                    keyCopy.release();
+                }
+            } else if (!value.hasArray() && !value.hasMemoryAddress()) {
+                ByteBuf valueCopy = UnpooledByteBufAllocator.DEFAULT.buffer(value.readableBytes(), value.readableBytes());
+                try {
+                    checkState(valueCopy.hasArray() || valueCopy.hasMemoryAddress(), valueCopy);
+                    value.getBytes(value.readerIndex(), valueCopy);
+                    return this.put(key, valueCopy, options);
+                } finally {
+                    valueCopy.release();
+                }
+            } else {
+                throw new IllegalArgumentException(key + " " + value);
+            }
+        } finally {
+            this.readLock.unlock();
+        }
     }
+
+    private native void put0HH(byte[] key, int keyOff, int keyLen, byte[] val, int valOff, int valLen, boolean sync);
+
+    private native void put0HD(byte[] key, int keyOff, int keyLen, long valAddr, int valLen, boolean sync);
+
+    private native void put0DH(long keyAddr, int keyLen, byte[] val, int valOff, int valLen, boolean sync);
+
+    private native void put0DD(long keyAddr, int keyLen, long valAddr, int valLen, boolean sync);
 
     @Override
     public void delete(@NonNull ByteBuf key) throws DBException {
+        this.delete(key, DEFAULT_WRITE_OPTIONS);
     }
 
     @Override
     public Snapshot delete(@NonNull ByteBuf key, @NonNull WriteOptions options) throws DBException {
-        return null;
+        if (options.snapshot()) {
+            throw new UnsupportedOperationException("snapshot");
+        }
+
+        this.readLock.lock();
+        try {
+            this.assertOpen();
+            if (key.hasArray()) {
+                this.delete0H(
+                        key.array(), key.arrayOffset() + key.readerIndex(), key.readableBytes(),
+                        options.sync());
+            } else if (key.hasMemoryAddress()) {
+                this.delete0D(
+                        key.memoryAddress() + key.readerIndex(), key.readableBytes(),
+                        options.sync());
+            } else {
+                ByteBuf keyCopy = UnpooledByteBufAllocator.DEFAULT.buffer(key.readableBytes(), key.readableBytes());
+                try {
+                    checkState(keyCopy.hasArray() || keyCopy.hasMemoryAddress(), keyCopy);
+                    key.getBytes(key.readerIndex(), keyCopy);
+                    return this.delete(keyCopy, options);
+                } finally {
+                    keyCopy.release();
+                }
+            }
+            return null;
+        } finally {
+            this.readLock.unlock();
+        }
     }
+
+    private native void delete0H(byte[] key, int keyOff, int keyLen, boolean sync);
+
+    private native void delete0D(long keyAddr, int keyLen, boolean sync);
 
     private void assertOpen() {
         if (this.db == 0L) {

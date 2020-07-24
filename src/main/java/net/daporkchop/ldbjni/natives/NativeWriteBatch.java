@@ -20,19 +20,24 @@
 
 package net.daporkchop.ldbjni.natives;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.UnpooledByteBufAllocator;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import net.daporkchop.ldbjni.direct.DirectWriteBatch;
 import net.daporkchop.lib.unsafe.PCleaner;
 import org.iq80.leveldb.WriteBatch;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static net.daporkchop.lib.common.util.PValidation.checkState;
+
 /**
  * @author DaPorkchop_
  */
 @RequiredArgsConstructor
-final class NativeWriteBatch implements WriteBatch {
+final class NativeWriteBatch implements DirectWriteBatch {
     final AtomicLong ptr;
 
     private final NativeDB db;
@@ -45,20 +50,106 @@ final class NativeWriteBatch implements WriteBatch {
     }
 
     @Override
-    public synchronized WriteBatch put(@NonNull byte[] key, @NonNull byte[] value) {
-        this.put0(this.ptr.get(), key, value);
+    public synchronized DirectWriteBatch put(@NonNull byte[] key, @NonNull byte[] value) {
+        this.put0HH(this.ptr.get(), key, 0, key.length, value, 0, value.length);
         return this;
     }
-
-    private native void put0(long ptr, byte[] key, byte[] value);
 
     @Override
-    public synchronized WriteBatch delete(@NonNull byte[] key) {
-        this.delete0(this.ptr.get(), key);
+    public synchronized DirectWriteBatch put(@NonNull ByteBuf key, @NonNull ByteBuf value) {
+        if (key.hasArray()) {
+            if (value.hasArray()) {
+                this.put0HH(
+                        this.ptr.get(),
+                        key.array(), key.arrayOffset() + key.readerIndex(), key.readableBytes(),
+                        value.array(), value.arrayOffset() + value.readerIndex(), value.readableBytes());
+                return this;
+            } else if (value.hasMemoryAddress()) {
+                this.put0HD(
+                        this.ptr.get(),
+                        key.array(), key.arrayOffset() + key.readerIndex(), key.readableBytes(),
+                        value.memoryAddress() + value.readerIndex(), value.readableBytes());
+                return this;
+            }
+        } else if (value.hasMemoryAddress())    {
+            if (value.hasArray()) {
+                this.put0DH(
+                        this.ptr.get(),
+                        key.memoryAddress() + key.readerIndex(), key.readableBytes(),
+                        value.array(), value.arrayOffset() + value.readerIndex(), value.readableBytes());
+                return this;
+            } else if (value.hasMemoryAddress()) {
+                this.put0DD(
+                        this.ptr.get(),
+                        key.memoryAddress() + key.readerIndex(), key.readableBytes(),
+                        value.memoryAddress() + value.readerIndex(), value.readableBytes());
+                return this;
+            }
+        }
+        if (!key.hasArray() && !key.hasMemoryAddress()) {
+            ByteBuf keyCopy = UnpooledByteBufAllocator.DEFAULT.buffer(key.readableBytes(), key.readableBytes());
+            try {
+                checkState(keyCopy.hasArray() || keyCopy.hasMemoryAddress(), keyCopy);
+                key.getBytes(key.readerIndex(), keyCopy);
+                this.put(keyCopy, value);
+            } finally {
+                keyCopy.release();
+            }
+        } else if (!value.hasArray() && !value.hasMemoryAddress()) {
+            ByteBuf valueCopy = UnpooledByteBufAllocator.DEFAULT.buffer(value.readableBytes(), value.readableBytes());
+            try {
+                checkState(valueCopy.hasArray() || valueCopy.hasMemoryAddress(), valueCopy);
+                value.getBytes(value.readerIndex(), valueCopy);
+                this.put(key, valueCopy);
+            } finally {
+                valueCopy.release();
+            }
+        } else {
+            throw new IllegalArgumentException(key + " " + value);
+        }
         return this;
     }
 
-    private native void delete0(long ptr, byte[] key);
+    private native void put0HH(long ptr, byte[] key, int keyOff, int keyLen, byte[] val, int valOff, int valLen);
+
+    private native void put0HD(long ptr, byte[] key, int keyOff, int keyLen, long valAddr, int valLen);
+
+    private native void put0DH(long ptr, long keyAddr, int keyLen, byte[] val, int valOff, int valLen);
+
+    private native void put0DD(long ptr, long keyAddr, int keyLen, long valAddr, int valLen);
+
+    @Override
+    public synchronized DirectWriteBatch delete(@NonNull byte[] key) {
+        this.delete0H(this.ptr.get(), key, 0, key.length);
+        return this;
+    }
+
+    @Override
+    public synchronized DirectWriteBatch delete(@NonNull ByteBuf key) {
+        if (key.hasArray()) {
+            this.delete0H(
+                    this.ptr.get(),
+                    key.array(), key.arrayOffset() + key.readerIndex(), key.readableBytes());
+        } else if (key.hasMemoryAddress()) {
+            this.delete0D(
+                    this.ptr.get(),
+                    key.memoryAddress() + key.readerIndex(), key.readableBytes());
+        } else {
+            ByteBuf keyCopy = UnpooledByteBufAllocator.DEFAULT.buffer(key.readableBytes(), key.readableBytes());
+            try {
+                checkState(keyCopy.hasArray() || keyCopy.hasMemoryAddress(), keyCopy);
+                key.getBytes(key.readerIndex(), keyCopy);
+                this.delete(keyCopy);
+            } finally {
+                keyCopy.release();
+            }
+        }
+        return this;
+    }
+
+    private native void delete0H(long ptr, byte[] key, int keyOff, int keyLen);
+
+    private native void delete0D(long ptr, long keyAddr, int keyLen);
 
     @Override
     public synchronized void close() throws IOException {
