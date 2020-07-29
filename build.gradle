@@ -118,7 +118,7 @@ publishing {
     }
 }
 
-//publish.dependsOn(publishToMavenLocal)
+publish.dependsOn(publishToMavenLocal)
 build.dependsOn(publish)
 
 if (System.getProperty("os.name", "").toLowerCase().replaceAll("[^a-z0-9]+", "").startsWith("windows")) {
