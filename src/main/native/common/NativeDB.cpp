@@ -201,7 +201,7 @@ JNIEXPORT jobject JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_get0D
     return env->CallObjectMethod(obj, get0_finalID, (jlong) value.data(), value.size(), alloc, type);
 }
 
-JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_getInto0H
+JNIEXPORT jboolean JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_getInto0H
   (JNIEnv* env, jobject obj, jbyteArray key, jint keyOff, jint keyLen, jboolean verifyChecksums, jboolean fillCache, jlong snapshot, jobject dst)  {
     auto db = (leveldb::DB*) env->GetLongField(obj, dbID);
 
@@ -214,7 +214,7 @@ JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_getInto0H
     auto keyPtr = (char*) env->GetPrimitiveArrayCritical(key, nullptr);
     if (!keyPtr)    {
         throwISE(env, "Unable to pin key array");
-        return;
+        return false;
     }
     leveldb::Slice keySlice(&keyPtr[keyOff], keyLen);
 
@@ -224,13 +224,14 @@ JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_getInto0H
     env->ReleasePrimitiveArrayCritical(key, keyPtr, 0);
 
     if (status.IsNotFound() || checkException(env, status))    {
-        return;
+        return false;
     }
 
     env->CallObjectMethod(obj, getInto0_finalID, (jlong) value.data(), value.size(), dst);
+    return true;
 }
 
-JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_getInto0D
+JNIEXPORT jboolean JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_getInto0D
   (JNIEnv* env, jobject obj, jlong keyAddr, jint keyLen, jboolean verifyChecksums, jboolean fillCache, jlong snapshot, jobject dst)  {
     auto db = (leveldb::DB*) env->GetLongField(obj, dbID);
 
@@ -246,10 +247,11 @@ JNIEXPORT void JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_getInto0D
     leveldb::Status status = db->Get(readOptions, keySlice, &value);
 
     if (status.IsNotFound() || checkException(env, status))    {
-        return;
+        return false;
     }
 
     env->CallObjectMethod(obj, getInto0_finalID, (jlong) value.data(), value.size(), dst);
+    return true;
 }
 
 JNIEXPORT jobject JNICALL Java_net_daporkchop_ldbjni_natives_NativeDB_getZeroCopy0H

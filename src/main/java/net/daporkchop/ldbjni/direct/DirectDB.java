@@ -53,9 +53,9 @@ public interface DirectDB extends DB {
 
     ByteBuf get(@NonNull ByteBuf key, @NonNull ReadOptions options) throws DBException;
 
-    void getInto(@NonNull ByteBuf key, @NonNull ByteBuf dst) throws DBException;
+    boolean getInto(@NonNull ByteBuf key, @NonNull ByteBuf dst) throws DBException;
 
-    void getInto(@NonNull ByteBuf key, @NonNull ByteBuf dst, @NonNull ReadOptions options) throws DBException;
+    boolean getInto(@NonNull ByteBuf key, @NonNull ByteBuf dst, @NonNull ReadOptions options) throws DBException;
 
     default ByteBuf getZeroCopy(@NonNull ByteBuf key, @NonNull ReadOptions options) throws DBException  {
         return this.get(key, options);

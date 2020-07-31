@@ -329,21 +329,21 @@ final class NativeDB implements DirectDB {
     }
 
     @Override
-    public void getInto(@NonNull ByteBuf key, @NonNull ByteBuf dst) throws DBException {
-        this.getInto(key, dst, DEFAULT_READ_OPTIONS);
+    public boolean getInto(@NonNull ByteBuf key, @NonNull ByteBuf dst) throws DBException {
+        return this.getInto(key, dst, DEFAULT_READ_OPTIONS);
     }
 
     @Override
-    public void getInto(@NonNull ByteBuf key, @NonNull ByteBuf dst, @NonNull ReadOptions options) throws DBException {
+    public boolean getInto(@NonNull ByteBuf key, @NonNull ByteBuf dst, @NonNull ReadOptions options) throws DBException {
         this.readLock.lock();
         try {
             this.assertOpen(); //TODO: snapshot
             if (key.hasArray()) {
-                this.getInto0H(
+                return this.getInto0H(
                         key.array(), key.arrayOffset() + key.readerIndex(), key.readableBytes(),
                         options.verifyChecksums(), options.fillCache(), 0L, dst);
             } else if (key.hasMemoryAddress()) {
-                this.getInto0D(
+                return this.getInto0D(
                         key.memoryAddress() + key.readerIndex(), key.readableBytes(),
                         options.verifyChecksums(), options.fillCache(), 0L, dst);
             } else {
@@ -351,7 +351,7 @@ final class NativeDB implements DirectDB {
                 try {
                     checkState(keyCopy.hasArray() || keyCopy.hasMemoryAddress(), keyCopy);
                     key.getBytes(key.readerIndex(), keyCopy);
-                    this.getInto(keyCopy, dst, options);
+                    return this.getInto(keyCopy, dst, options);
                 } finally {
                     keyCopy.release();
                 }
@@ -361,9 +361,9 @@ final class NativeDB implements DirectDB {
         }
     }
 
-    private native void getInto0H(byte[] key, int keyOff, int keyLen, boolean verifyChecksums, boolean fillCache, long snapshot, ByteBuf dst);
+    private native boolean getInto0H(byte[] key, int keyOff, int keyLen, boolean verifyChecksums, boolean fillCache, long snapshot, ByteBuf dst);
 
-    private native void getInto0D(long keyAddr, int keyLen, boolean verifyChecksums, boolean fillCache, long snapshot, ByteBuf dst);
+    private native boolean getInto0D(long keyAddr, int keyLen, boolean verifyChecksums, boolean fillCache, long snapshot, ByteBuf dst);
 
     private void getInto0_final(long valueAddr, int valueLen, @NonNull ByteBuf dst) {
         dst.writeBytes(Unpooled.wrappedBuffer(valueAddr, valueLen, false));

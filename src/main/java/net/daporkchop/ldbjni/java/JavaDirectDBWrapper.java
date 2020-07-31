@@ -58,7 +58,8 @@ final class JavaDirectDBWrapper implements DirectDB {
 
     @Override
     public ByteBuf get(@NonNull ByteBuf key) throws DBException {
-        return Unpooled.wrappedBuffer(this.get(toArray(key)));
+        byte[] val = this.get(toArray(key));
+        return val != null ? Unpooled.wrappedBuffer(val) : null;
     }
 
     @Override
@@ -68,17 +69,30 @@ final class JavaDirectDBWrapper implements DirectDB {
 
     @Override
     public ByteBuf get(@NonNull ByteBuf key, @NonNull ReadOptions options) throws DBException {
-        return Unpooled.wrappedBuffer(this.get(toArray(key), options));
+        byte[] val = this.get(toArray(key), options);
+        return val != null ? Unpooled.wrappedBuffer(val) : null;
     }
 
     @Override
-    public void getInto(@NonNull ByteBuf key, @NonNull ByteBuf dst) throws DBException {
-        dst.writeBytes(this.get(key));
+    public boolean getInto(@NonNull ByteBuf key, @NonNull ByteBuf dst) throws DBException {
+        byte[] val = this.get(toArray(key));
+        if (val != null) {
+            dst.writeBytes(val);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
-    public void getInto(@NonNull ByteBuf key, @NonNull ByteBuf dst, @NonNull ReadOptions options) throws DBException {
-        dst.writeBytes(this.get(key, options));
+    public boolean getInto(@NonNull ByteBuf key, @NonNull ByteBuf dst, @NonNull ReadOptions options) throws DBException {
+        byte[] val = this.get(toArray(key), options);
+        if (val != null) {
+            dst.writeBytes(val);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
