@@ -19,6 +19,7 @@
  */
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import lombok.NonNull;
@@ -87,6 +88,26 @@ public class LevelDBTest {
                         System.out.println(i);
                     });
         }, CompressionType.NONE);
+    }
+
+    @Test
+    public void testBufferTypes() throws IOException {
+        this.doTest(db -> {
+            ByteBuf direct = ByteBufAllocator.DEFAULT.directBuffer().writeInt(0);
+            ByteBuf heap = ByteBufAllocator.DEFAULT.heapBuffer().writeInt(0);
+
+            System.out.println("DD");
+            ((DirectDB) db).put(direct, direct);
+
+            System.out.println("DH");
+            ((DirectDB) db).put(direct, heap);
+
+            System.out.println("HD");
+            ((DirectDB) db).put(heap, direct);
+
+            System.out.println("HH");
+            ((DirectDB) db).put(heap, heap);
+        }, CompressionType.ZLIB_RAW);
     }
 
     @Test

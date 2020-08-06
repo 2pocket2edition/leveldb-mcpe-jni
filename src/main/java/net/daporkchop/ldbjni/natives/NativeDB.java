@@ -279,7 +279,7 @@ final class NativeDB implements DirectDB {
 
     private ByteBufAllocator selectAlloc(@NonNull ReadOptions options) {
         ByteBufAllocator alloc = options instanceof DirectReadOptions ? ((DirectReadOptions) options).alloc() : null;
-        return alloc == null ? UnpooledByteBufAllocator.DEFAULT : alloc;
+        return alloc == null ? ByteBufAllocator.DEFAULT : alloc;
     }
 
     private BufType selectType(@NonNull ReadOptions options) {
@@ -438,7 +438,7 @@ final class NativeDB implements DirectDB {
                             options.sync());
                     return null;
                 }
-            } else if (value.hasMemoryAddress())    {
+            } else if (key.hasMemoryAddress())    {
                 if (value.hasArray()) {
                     this.put0DH(
                             key.memoryAddress() + key.readerIndex(), key.readableBytes(),
@@ -454,7 +454,7 @@ final class NativeDB implements DirectDB {
                 }
             }
             if (!key.hasArray() && !key.hasMemoryAddress()) {
-                ByteBuf keyCopy = UnpooledByteBufAllocator.DEFAULT.buffer(key.readableBytes(), key.readableBytes());
+                ByteBuf keyCopy = ByteBufAllocator.DEFAULT.buffer(key.readableBytes(), key.readableBytes());
                 try {
                     checkState(keyCopy.hasArray() || keyCopy.hasMemoryAddress(), keyCopy);
                     key.getBytes(key.readerIndex(), keyCopy);
@@ -463,7 +463,7 @@ final class NativeDB implements DirectDB {
                     keyCopy.release();
                 }
             } else if (!value.hasArray() && !value.hasMemoryAddress()) {
-                ByteBuf valueCopy = UnpooledByteBufAllocator.DEFAULT.buffer(value.readableBytes(), value.readableBytes());
+                ByteBuf valueCopy = ByteBufAllocator.DEFAULT.buffer(value.readableBytes(), value.readableBytes());
                 try {
                     checkState(valueCopy.hasArray() || valueCopy.hasMemoryAddress(), valueCopy);
                     value.getBytes(value.readerIndex(), valueCopy);
@@ -510,7 +510,7 @@ final class NativeDB implements DirectDB {
                         key.memoryAddress() + key.readerIndex(), key.readableBytes(),
                         options.sync());
             } else {
-                ByteBuf keyCopy = UnpooledByteBufAllocator.DEFAULT.buffer(key.readableBytes(), key.readableBytes());
+                ByteBuf keyCopy = ByteBufAllocator.DEFAULT.buffer(key.readableBytes(), key.readableBytes());
                 try {
                     checkState(keyCopy.hasArray() || keyCopy.hasMemoryAddress(), keyCopy);
                     key.getBytes(key.readerIndex(), keyCopy);
@@ -547,20 +547,26 @@ final class NativeDB implements DirectDB {
     }
 
     private static final class StdStringByteBuf extends UnpooledUnsafeDirectByteBuf {
-        private static final long DONOTFREE_OFFSET = PUnsafe.pork_getOffset(UnpooledUnsafeDirectByteBuf.class, "doNotFree");
-
         protected final long strAddr;
 
         public StdStringByteBuf(long valueAddr, int valueLen, long strAddr) {
             super(UnpooledByteBufAllocator.DEFAULT, PlatformDependent.directBuffer(valueAddr, valueLen), valueLen);
-
-            PUnsafe.putBoolean(this, DONOTFREE_OFFSET, false);
 
             this.strAddr = strAddr;
         }
 
         @Override
         protected void freeDirect(ByteBuffer buffer) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public ByteBuf capacity(int newCapacity) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        protected void deallocate() {
             deleteString(this.strAddr);
         }
     }

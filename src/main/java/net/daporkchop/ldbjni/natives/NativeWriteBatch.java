@@ -21,6 +21,7 @@
 package net.daporkchop.ldbjni.natives;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -71,7 +72,7 @@ final class NativeWriteBatch implements DirectWriteBatch {
                         value.memoryAddress() + value.readerIndex(), value.readableBytes());
                 return this;
             }
-        } else if (value.hasMemoryAddress())    {
+        } else if (key.hasMemoryAddress())    {
             if (value.hasArray()) {
                 this.put0DH(
                         this.ptr.get(),
@@ -87,7 +88,7 @@ final class NativeWriteBatch implements DirectWriteBatch {
             }
         }
         if (!key.hasArray() && !key.hasMemoryAddress()) {
-            ByteBuf keyCopy = UnpooledByteBufAllocator.DEFAULT.buffer(key.readableBytes(), key.readableBytes());
+            ByteBuf keyCopy = ByteBufAllocator.DEFAULT.buffer(key.readableBytes(), key.readableBytes());
             try {
                 checkState(keyCopy.hasArray() || keyCopy.hasMemoryAddress(), keyCopy);
                 key.getBytes(key.readerIndex(), keyCopy);
@@ -96,7 +97,7 @@ final class NativeWriteBatch implements DirectWriteBatch {
                 keyCopy.release();
             }
         } else if (!value.hasArray() && !value.hasMemoryAddress()) {
-            ByteBuf valueCopy = UnpooledByteBufAllocator.DEFAULT.buffer(value.readableBytes(), value.readableBytes());
+            ByteBuf valueCopy = ByteBufAllocator.DEFAULT.buffer(value.readableBytes(), value.readableBytes());
             try {
                 checkState(valueCopy.hasArray() || valueCopy.hasMemoryAddress(), valueCopy);
                 value.getBytes(value.readerIndex(), valueCopy);
@@ -135,7 +136,7 @@ final class NativeWriteBatch implements DirectWriteBatch {
                     this.ptr.get(),
                     key.memoryAddress() + key.readerIndex(), key.readableBytes());
         } else {
-            ByteBuf keyCopy = UnpooledByteBufAllocator.DEFAULT.buffer(key.readableBytes(), key.readableBytes());
+            ByteBuf keyCopy = ByteBufAllocator.DEFAULT.buffer(key.readableBytes(), key.readableBytes());
             try {
                 checkState(keyCopy.hasArray() || keyCopy.hasMemoryAddress(), keyCopy);
                 key.getBytes(key.readerIndex(), keyCopy);
