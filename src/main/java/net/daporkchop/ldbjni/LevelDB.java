@@ -35,7 +35,7 @@ public class LevelDB {
      * {@link net.daporkchop.ldbjni.java.JavaDBProvider} otherwise.
      */
     public final DBProvider PROVIDER = FeatureBuilder.<DBProvider>create(LevelDB.class)
-            .addNative("net.daporkchop.ldbjni.natives.NativeDBProvider", "libldb-jni")
+            .addNative("net.daporkchop.ldbjni.natives.NativeDBProvider")
             .addJava("net.daporkchop.ldbjni.java.JavaDBProvider")
             .build();
 }

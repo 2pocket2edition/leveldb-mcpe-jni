@@ -1,7 +1,7 @@
 ifneq ($(BUILD),$(notdir $(CURDIR)))
 .PHONY: $(BUILD) clean
 
-export OUTDIR	:=	$(CURDIR)/../src/main/resources
+export OUTDIR	:=	$(CURDIR)/../src/main/resources/net/daporkchop/ldbjni/natives
 BUILDDIR		:=	../build/native/$(BUILD_TYPE)/$(BUILD)
 
 clean:
@@ -28,9 +28,9 @@ INCLUDES		:=	$(INCLUDES) $(CURDIR)/lib-leveldb/include $(CURDIR)/lib-snappy
 INCLUDE			:=	$(addprefix -I,$(INCLUDES) $(CURDIR))
 
 build: libldb-jni.$(EXT)
-	@echo "Copying libldb-jni.$(EXT) to $(OUTDIR)/$(BUILD)/..."
-	@[ -d $(OUTDIR)/$(BUILD) ] || mkdir -p $(OUTDIR)/$(BUILD)
-	@cp libldb-jni.$(EXT) $(OUTDIR)/$(BUILD)/libldb-jni.$(EXT)
+	@echo "Copying libldb-jni.$(EXT) to $(OUTDIR)/..."
+	@[ -d $(OUTDIR) ] || mkdir -p $(OUTDIR)
+	@cp libldb-jni.$(EXT) $(OUTDIR)/$(BUILD).$(EXT)
 
 libldb-jni.$(EXT): $(CFILES) $(CPPFILES) $(OFILES) $(CURDIR)/lib-leveldb/libleveldb.a $(CURDIR)/lib-zlib/libz.a
 	@echo "Linking $@..."
